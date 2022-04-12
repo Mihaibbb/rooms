@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import styles from "../Styles/CreateStyles";
 
 export default function CreateRoom({ route, navigation }) {
-
+    console.warn("hello");
     const { id, socket } = route.params;
     console.warn(id);
 
