@@ -12,14 +12,6 @@ export default function JoinRoom({ route, navigation }) {
     const { id, socket } = route.params;
     console.warn(id);
 
-    const [roomId, changeRoomId] = useState(null);
-    const [username, setUsername] = useState(null);
-    const [dbId, setDatabaseId] = useState(null);
-    const [email, setEmail] = useState(null);
-    const [password, setPassword] = useState(null);
-    const [account, hasAccount] = useState(false);
-    const [emailAccount, setEmailAccount] = useState(null);
-    const [passwordAccount, setPasswordAccount] = useState(null);
     const [roomIdAccount, setRoomIdAccount] = useState(null);
     const [myErrs, setErrors] = useState([]);
 
@@ -142,8 +134,6 @@ export default function JoinRoom({ route, navigation }) {
                 setErrors(newErrors);
                 return;
             }
-
-            
             
             socket.emit("found_account", emailAccount, passwordAccount, roomIdAccount, async (foundDbId) => {
                 console.warn("HERE");
@@ -174,108 +164,55 @@ export default function JoinRoom({ route, navigation }) {
             });
         });
     };
+
+    const joinCurrRoom = () => {
+        let errors = "";
+        if (roomIdAccount.length !== ROOM_LENGTH) errors += "Room doesn't have a valid form.";
+
+        socket.emit("room_exists", roomIdAccount, async response => {
+            if (!response) errors += "Room doesn't exist.";
+ 
+            if (errors.length > 0) {
+                const errs = errors.split(".");
+                setErrors(errs);
+                return;
+            }
+
+            const roomName = response.roomName;
+            const username = await AsyncStorage.getItem("username");
+            const email = await AsyncStorage.getItem("email");
+            const fullName = await AsyncStorage.getItem("name");
+
+            socket.emit("join_room", roomIdAccount, fullName, username, 0, id, email);
+
+            const newRooms = await AsyncStorage.getItem("rooms") ? JSON.parse(await AsyncStorage.getItem("rooms")) : [];
+            newRooms.push({
+                roomId: roomIdAccount,
+                roomName: roomName,
+                admin: false
+            });
+
+            await AsyncStorage.setItem("rooms", JSON.stringify(newRooms));
+            socket.emit("update_rooms", email, JSON.stringify(newRooms));
+            setTimeout(() => navigation.navigate("Rooms"), 500);
+        });
+    };
     
     return (
         <TouchableWithoutFeedback onPress={() => isKBVisible ? Keyboard.dismiss() : null}>
             <View style={styles.container}>
 
-                {/* <Text style={styles.normText}>Your new room id is: 
-                    <Text style={styles.idText}> {roomId}</Text>
-                </Text> */}
-
-                <View style={styles.account}>
-                    <TouchableOpacity 
-                        style={[styles.accountContainer, {flex: 1.2, borderRightWidth: 2, borderRightColor: "rgb(33,150,243)"}]}
-                        onPress={() => hasAccount(false)}
-                    >
-                        <Text style={[styles.accountText, !account ? {color: "royalblue"} : null]}>Don't have an account</Text>
-                    </TouchableOpacity>
                     
-                    <TouchableOpacity 
-                        style={[styles.accountContainer, {flex: 1, borderLeftWidth: 2, borderLeftColor: 'rgb(33,150,243)'}]}
-                        onPress={() => hasAccount(true)}
-                    >
-                        <Text style={[styles.accountText, account ? {color: "royalblue"} : null]}>Have an account</Text>
-                    </TouchableOpacity>                
-                </View>
+                <TextInput
+                    style={styles.input}
+                    onChangeText={setRoomIdAccount}
+                    value={roomIdAccount}
+                    placeholder="Room's id..."
+                    keyboardAppearance="dark"
+                    placeholderTextColor="rgba(255, 255, 255, .6)"
 
-                {!account ? (
-                    <>
-                        <TextInput
-                            style={styles.input}
-                            onChangeText={changeRoomId}
-                            value={roomId}
-                            placeholder="Your room's id..."
-                            keyboardAppearance="dark"
-                            placeholderTextColor="rgba(255, 255, 255, .6)"
-                        />
-        
-                        <TextInput
-                            style={styles.input}
-                            onChangeText={setUsername}
-                            value={username}
-                            placeholder="Your full name..."
-                            keyboardAppearance="dark"
-                            placeholderTextColor="rgba(255, 255, 255, .6)"
-
-                        />
+                />
     
-                        <TextInput
-                            style={styles.input}
-                            onChangeText={setEmail}
-                            value={email}
-                            placeholder="Your email..."
-                            keyboardAppearance="dark"
-                            placeholderTextColor="rgba(255, 255, 255, .6)"
-
-                        />
-    
-                        <TextInput
-                            style={styles.input}
-                            onChangeText={setPassword}
-                            value={password}
-                            placeholder="Your password..."
-                            keyboardAppearance="dark"
-                            secureTextEntry={true}
-                            placeholderTextColor="rgba(255, 255, 255, .6)"
-
-                        /> 
-                    </>
-                ) : (
-                    <>
-                        <TextInput
-                            style={styles.input}
-                            onChangeText={setRoomIdAccount}
-                            value={roomIdAccount}
-                            placeholder="Your room's id..."
-                            keyboardAppearance="dark"
-                            placeholderTextColor="rgba(255, 255, 255, .6)"
-
-                        />
-
-
-                        <TextInput
-                            style={styles.input}
-                            onChangeText={setEmailAccount}
-                            value={emailAccount}
-                            placeholder="Your email..."
-                            keyboardAppearance="dark"
-                            placeholderTextColor="rgba(255, 255, 255, .6)"
-
-                        />
-
-                        <TextInput
-                            style={styles.input}
-                            onChangeText={setPasswordAccount}
-                            value={passwordAccount}
-                            placeholder="Your password..."
-                            keyboardAppearance="dark"
-                            secureTextEntry={true}
-                            placeholderTextColor="rgba(255, 255, 255, .6)"
-                        />
-                    </>
-                )}
-
                 <View style={styles.idContainer}>
                     <Text style={[styles.bottomText, styles.whiteText]}>Your id is: 
                         <Text style={styles.idText}> {id}</Text>
@@ -287,7 +224,7 @@ export default function JoinRoom({ route, navigation }) {
                         <TouchableOpacity
                             style={styles.buttonContainer}
                             underlayColor="#fff"
-                            onPress={async () => !account ? await submitJoin() : await submitJoinAccount()}
+                            onPress={async () => await joinCurrRoom()}
                         >
                             <Text style={styles.whiteText}>Join room</Text>
                         </TouchableOpacity>
@@ -295,10 +232,10 @@ export default function JoinRoom({ route, navigation }) {
                     (
                         <View style={{width: "100%", maxWidth: 250, marginTop: 35, height: 50}}>
                             <Button
-                                title="Submit"
+                                title="Join room"
                                 backgroundColor="#841584"
                                 
-                                onPress={async () => !account ? await submitJoin() : await submitJoinAccount()}
+                                onPress={async () => await joinCurrRoom()}
                             />
                         </View>
                     ) : null

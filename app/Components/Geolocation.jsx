@@ -7,7 +7,7 @@ import styles from "../Styles/HomeStyles";
 
 export default function Home({ route, navigation }) {
 
-    const {id, socket, roomId, roomName, adminName, email, password} = route.params;
+    const {id, socket, roomId, roomName, email} = route.params;
 
     const [location, setLocation] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
@@ -109,11 +109,20 @@ export default function Home({ route, navigation }) {
         setMaxLong(newMaxLong);
         setStart(true);
 
-        socket.emit("create_room", roomId, roomName, adminName, inRoom === null ? 0 : inRoom, `${newMinLat} ${newMaxLat} ${newMinLong} ${newMaxLong}`, id, email, password);
+        socket.emit("create_room", roomId, roomName, inRoom === null ? 0 : inRoom, `${newMinLat} ${newMaxLat} ${newMinLong} ${newMaxLong}`, id, email);
+        socket.emit("get_rooms", email, async rooms => {
+            const newRooms = rooms ? JSON.parse(rooms) : [];
+            
+            newRooms.push({
+                roomId: roomId,
+                roomName: roomName,
+                admin: true
+            });
 
-    
-        setTimeout(() => navigation.navigate("Home", {createdRoom: true}), 750);
-        
+            await AsyncStorage.setItem("rooms", JSON.stringify(newRooms));
+            socket.emit("update_rooms", email, JSON.stringify(newRooms));
+            setTimeout(() => navigation.navigate("Rooms", {createdRoom: true}), 750);
+        });        
     };
 
     const checkIfYouAreInRoom = async () => {

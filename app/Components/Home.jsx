@@ -6,27 +6,29 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { io } from 'socket.io-client'; 
 import UserGeolocation from "./UserGeolocation";
 
-
 import styles from "../Styles/Styles";
 
 export default function Home({ route, navigation }) {
-
-    const {dbId, rooms} = route.params ? route.params : {ok: null};
-
-    const leaveRoom = async () => {
+    
+    const {dbId} = route.params ? route.params : {ok: null};
+    
+    const deleteStorage = async () => {
         const keys = await AsyncStorage.getAllKeys();
         await AsyncStorage.multiRemove(keys);
-       
     };
 
     const [socket, setSocket] = useState(null);
     const [id, setId] = useState(null);
-    const [admin, setAdmin] = useState(null);
-    const [user, setUser] = useState(null);
-    const [roomId, setRoomId] = useState(null);
     const [newDbId, setDbId] = useState(null);
+    const [rooms, setRooms] = useState(null);
+    const [email, setEmail] = useState(null);
+    const [username, setUsername] = useState(null);
 
-    useEffect(() => {
+    const gotLoggedIn = async () => {
+        return await AsyncStorage.getItem("logged");
+    };
+
+    useEffect(async () => {
         
         let newSocket = io("http://192.168.1.14:3000");
         newSocket.emit('new_connection', "Connected");
@@ -35,25 +37,45 @@ export default function Home({ route, navigation }) {
             setId(newId);
             // console.warn("salut", newId);
         });
+
         setSocket(newSocket);
         console.warn("ok");
         
     }, []);
 
     useEffect(async () => {
-        if (dbId) await AsyncStorage.setItem("db_id", JSON.stringify(dbId));
-        const isAdmin = await AsyncStorage.getItem("admin");
-        setAdmin(JSON.parse(isAdmin));
-        const isUser = await AsyncStorage.getItem("user");
-        setUser(JSON.parse(isUser));
-        console.warn("User", isUser);
-        const isRoomId = await AsyncStorage.getItem("roomId");
-        setRoomId(isRoomId);
-        console.warn("Room Id", isRoomId);
-        const isDbId = await AsyncStorage.getItem("db_id");
-        console.warn("Db ID new", isDbId);
-        setDbId(JSON.parse(isDbId));
+
+        try {
+            const emailLS = await AsyncStorage.getItem("email") && JSON.parse(await AsyncStorage.getItem("email"));
+            const usernameLS = await AsyncStorage.getItem("username") && JSON.parse(await AsyncStorage.getItem("username"));
+            setEmail(emailLS);
+            setUsername(usernameLS);
+            console.warn(emailLS, usernameLS);
+            
+            emailLS && usernameLS && socket.emit("account_exists", emailLS, usernameLS, async exists => {
+                console.warn("EXISTS", exists);
+                if (!exists) await deleteStorage();
+            });  
+            
+            if (dbId && emailLS && usernameLS && !await AsyncStorage.getItem("db_id")) await AsyncStorage.setItem("db_id", JSON.stringify(dbId));
+            const isDbId = await AsyncStorage.getItem("db_id");
+            console.warn("Db ID new", isDbId);
+            setDbId(JSON.parse(isDbId));
+            const areRooms = await AsyncStorage.getItem("rooms");
+            if (areRooms !== null) setRooms(JSON.parse(areRooms));
+            console.warn(JSON.parse(areRooms));
+
+            await gotLoggedIn() && socket.emit("get_rooms", email, dbRooms => {
+                const newRooms = dbRooms ? JSON.parse(dbRooms) : [];
+                setRooms(newRooms);
+            });
+
+        } catch (e) {
+            console.warn("ERROR: ", e);
+        }
     });
+
+    useEffect(() => console.warn("NEW ROOMS: ", rooms), [rooms]);
 
     return (
         <ScrollView style={styles.container} stickyHeaderIndices={[0]}>
@@ -61,20 +83,20 @@ export default function Home({ route, navigation }) {
 
                 {!rooms ? (
                     <View style={styles.centerText}>
-                        <Text style={{fontSize: 36, color: "rgba(0, 0, 0, .3)"}}>No rooms</Text>
+                        <Text style={{fontSize: 36, color: "rgba(255, 255, 255, .4)"}}>No rooms</Text>
                     </View>
                 ) : (
                     <View style={styles.roomContainer}>
-                        {[...rooms].map(room => {
+                        {[...rooms].map((room, roomIdx) => {
                             return (
-                                <View style={styles.room}>
-                                    <Text styles={styles.roomTitle}>{room.title}</Text>
-                                    <Text style={styles.roomCode}>{room.code}</Text>
+                                <TouchableOpacity style={styles.room} key={roomIdx}>
+                                    <Text styles={styles.roomTitle}>{room.roomName}</Text>
+                                    <Text style={styles.roomCode}>{room.roomId}</Text>
                                     <FontAwesomeIcon
                                         style={styles.roomIcon}
-                                        icon={room.type === 'user' ? faUsers : faUser}
+                                        icon={room.admin ? faUser : faUsers}
                                     />
-                                </View>
+                                </TouchableOpacity>
                             );
                         })}
                     </View>
@@ -82,8 +104,10 @@ export default function Home({ route, navigation }) {
 
                 <View style={styles.addButton}>
                     <TouchableOpacity
-                        onPress={() => navigation.navigate("Rooms", {socket, id, admin, user, roomId, newDbId})}
-                        
+                        onPress={async () => await gotLoggedIn() ? 
+                            navigation.navigate("AddRoom", {socket, id, newDbId}) : 
+                            navigation.navigate("Sign", {socket, id})
+                        }
                     >
                         <FontAwesomeIcon 
                             icon={faPlus}
@@ -96,24 +120,8 @@ export default function Home({ route, navigation }) {
             </View>
 
             {
-            (user || dbId !== null) && roomId ? (
-                <>
-                    <TouchableOpacity
-                        style={styles.clearButton}
-                        underlayColor="rgb(255, 255, 255)"
-                        onPress={async() => await leaveRoom()}
-                    >
-                        <Text style={styles.clearText}>Leave every room 
-                            <FontAwesomeIcon
-                                icon={faBan}
-                                color="red"
-                                size={20}
-                                style={styles.icon}
-                            />
-                        </Text>
-                    </TouchableOpacity>
-                    <UserGeolocation roomId={roomId} socket={socket} id={newDbId !== null ? newDbId : dbId}/>
-                </>
+            (dbId !== null) ? (
+                <UserGeolocation socket={socket} id={newDbId !== null ? newDbId : dbId}/>
             ) : null
         }    
         </ScrollView>

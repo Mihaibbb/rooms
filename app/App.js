@@ -8,6 +8,8 @@ import JoinRoom from './Components/JoinRoom';
 import CreateRoom from './Components/CreateRoom';
 import Users from './Components/Users';
 import Rooms from './Components/Rooms';
+import AddRoom from './Components/AddRoom';
+import Sign from './Components/Sign';
 
 const Stack = createNativeStackNavigator();
 
@@ -21,7 +23,10 @@ export default function App() {
         headerShown: false,
         headerTintColor: "#fff"
       }}>
+        <Stack.Screen name="Rooms" component={Home}/>
         <Stack.Screen name="Home" component={Rooms} />
+        <Stack.Screen name="AddRoom" component={AddRoom} />
+        <Stack.Screen name="Sign" component={Sign} />
         {/* <Stack.Screen name="Rooms" component={Rooms} options={{ title: 'New Room' }} /> */}
         <Stack.Screen name="Geolocation" component={Geolocation} options={{ title: 'Location' }} />
         <Stack.Screen name="CreateRoom" component={CreateRoom} options={{ title: 'Create room' }} />

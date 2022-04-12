@@ -18,6 +18,7 @@ const database = mysql.createConnection({
     port: '3306'
 });
 
+
 database.connect(err => {
     if (err) throw err;
     console.log('Mysql connected');
@@ -38,18 +39,15 @@ io.on("connection", socket => {
         io.emit("get_id", sockets[users - 1]);
     });
 
-    socket.on("create_room", async (roomId, roomName, adminName, currStatus, coords, id, email, password) => {
+    socket.on("create_room", (roomId, roomName, currStatus, coords, id, email) => {
         console.log("is socket id the same? ", socket.id === id);
-        const hashPassword = await bcrypt.hash(password, 10);
-        const placeholders = [roomId, id, adminName, currStatus, coords, roomName, email, hashPassword, null];
+        const placeholders = [roomId, id, currStatus, coords, roomName, email, null];
         let sql = 'CREATE TABLE ?? (id INT AUTO_INCREMENT PRIMARY KEY NOT NULL, ';
         sql += 'socket_id VARCHAR(255) NOT NULL, ';
-        sql += 'username VARCHAR(255) NOT NULL, ';
         sql += 'user_status BOOLEAN NOT NULL, ';
         sql += 'geolocation VARCHAR(255), ';
         sql += 'room_name VARCHAR(255), ';
         sql += 'email VARCHAR(255), ';
-        sql += 'password VARCHAR(255), ';
         sql += 'virtual_id VARCHAR(255));';
 
         database.query(sql, [roomId], (err, result) => {
@@ -60,7 +58,7 @@ io.on("connection", socket => {
             console.log("Success create table");
         });
         
-        sql = 'INSERT INTO ?? (socket_id, username, user_status, geolocation, room_name, email, password, virtual_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+        sql = 'INSERT INTO ?? (socket_id, user_status, geolocation, room_name, email, virtual_id) VALUES (?, ?, ?, ?, ?, ?)';
         database.query(sql, placeholders,  (err, result) => {
             if (err) {
                 console.log(err.message);
@@ -71,49 +69,45 @@ io.on("connection", socket => {
         });
     });
 
-    socket.on("join_room", async (roomId, userName, currStatus, id, email, password) => {
+    socket.on("join_room", async (roomId, fullName, userName, currStatus, id, email) => {
         console.log("id", roomId);
-        try {
-            const hashPassword = await bcrypt.hash(password, 10);
-            sql = "SELECT room_name, geolocation FROM ?? WHERE id=1";
-            database.query(sql, [roomId], (err, rows, fields) => {
+        
+        sql = "SELECT room_name, geolocation FROM ?? WHERE id=1";
+        database.query(sql, [roomId], (err, rows, fields) => {
+            if (err) {
+                console.log('Error', err);
+                throw err;
+            }
+            console.log("Rows: ", rows);
+            if (!rows || rows?.length === 0) return;
+            const adminField = rows[0];
+            console.log(adminField);
+            const roomName = adminField["room_name"];
+            const geolocation = adminField["geolocation"];
+            console.log(roomName, geolocation);
+            const placeholders = [roomId, id, fullName, userName, currStatus, geolocation, roomName, email, null];
+            sql = "INSERT INTO ?? (socket_id, name, username, user_status, geolocation, room_name, email, virtual_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            database.query(sql, placeholders, (err, result) => {
                 if (err) {
-                    console.log('Error', err);
+                    console.log(err.message);
                     throw err;
                 }
-                console.log("Rows: ", rows);
-                if (!rows || rows?.length === 0) return;
-                const adminField = rows[0];
-                console.log(adminField);
-                const roomName = adminField["room_name"];
-                const geolocation = adminField["geolocation"];
-                console.log(roomName, geolocation);
-                const placeholders = [roomId, id, userName, currStatus, geolocation, roomName, email, hashPassword, null];
-                sql = "INSERT INTO ?? (socket_id, username, user_status, geolocation, room_name, email, password, virtual_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-                database.query(sql, placeholders, (err, result) => {
-                    if (err) {
-                        console.log(err.message);
-                        throw err;
-                    }
-                    console.log(result);
-                    console.log("User registered");
-                });
-
-                sql = "SELECT id FROM ??";
-                database.query(sql, [roomId], (err, rows, fields) => {
-                    const dbId = rows[rows.length - 1]["id"];
-                    io.emit("db_id", parseInt(dbId));
-                });
-
-                sql = "SELECT username, user_status from ??";
-                database.query(sql, [roomId], (err, rows, fields) => {
-                    console.log(rows);
-                    io.emit("change_users", rows);
-                });
+                console.log(result);
+                console.log("User registered");
             });
-        } catch(e) {
-            throw e;
-        }
+
+            sql = "SELECT id FROM ??";
+            database.query(sql, [roomId], (err, rows, fields) => {
+                const dbId = rows[rows.length - 1]["id"];
+                io.to(socket.id).emit("db_id", parseInt(dbId));
+            });
+
+            sql = "SELECT username, user_status from ??";
+            database.query(sql, [roomId], (err, rows, fields) => {
+                console.log(rows);
+                io.to(socket.id).emit("change_users", rows);
+            });
+        });
     });
 
     socket.on("leave_room", (roomId, dbId, isAdmin) => {
@@ -136,7 +130,7 @@ io.on("connection", socket => {
         sql = "SELECT username, user_status from ??";
         database.query(sql, [roomId], (err, rows, fields) => {
             console.log(rows);
-            io.emit("get_rows", rows);
+            io.to(socket.id).emit("get_rows", rows);
         });
     });
 
@@ -146,7 +140,7 @@ io.on("connection", socket => {
             if (err) throw err;
             if (!rows) return;
             console.log(rows)
-            io.emit("get_coords", rows[0]["geolocation"]);
+            io.to(socket.id).emit("get_coords", rows[0]["geolocation"]);
         })
     });
 
@@ -180,11 +174,29 @@ io.on("connection", socket => {
             if (err) throw err;
             
             console.log("These are tables: ", tables);
-            const sameRoomId = tables.some(table => {
+            const sameRoomId = tables.find(table => {
                 console.log(table, Object.values(table)[0], roomId, Object.values(table)[0] === roomId);
                 return Object.values(table)[0] === roomId;
             });
-            response(sameRoomId);
+
+            if (!sameRoomId) response(false);
+            else {
+                sql = "SELECT room_name FROM ?? WHERE id = ?";
+                database.query(sql, [roomId, 1], (errs, rows) => {
+                    if (errs) throw errs;
+                    const row = rows[0];
+                    response(row["room_name"]);
+                });
+            }
+            
+        });
+    });
+
+    socket.on("update_rooms", (email, rooms) => {
+        sql = "UPDATE FROM ?? SET rooms = ? WHERE email = ?";
+        database.query(sql, ["users", rooms, email], (err, result) => {
+            if (err) throw err;
+            console.log(result);
         });
     });
 
@@ -217,6 +229,56 @@ io.on("connection", socket => {
                 id: parseInt(found[0]["id"]),
                 username: parseInt(found[0]["username"])
             });
+        });
+    });
+
+    socket.on("account_exists", (email, username, callback) => {
+        sql = "SELECT * FROM ?? WHERE email = ? OR username = ?";
+        database.query(sql, ["users", email, username], (errs, rows) => {
+            if (errs) throw errs;
+            console.log("ACCOUNT EXISTS: ", rows);
+            if (rows.length === 1) callback(true);
+            else callback(false);
+        });
+    });
+
+    socket.on("register", async (fullName, username, email, password, callback) => {
+        const hashPassword = await bcrypt.hash(password, 10);
+        sql = "INSERT INTO ?? (name, username, email, password, rooms, virtual_id) VALUES (?, ?, ?, ?, ?, ?)";
+        database.query(sql, ["users", fullName, username, email, hashPassword, null, socket.id], async (errs, result) => {
+            if (errs) throw errs;
+            console.log("Result: ", result);
+            callback(result.insertId);
+        });
+    });
+
+    socket.on("login", async (email, password, callback) => {
+        sql = "SELECT password from ?? WHERE email = ?";
+        database.query(sql, ["users", email], async (errs, rows) => {
+            if (errs) throw errs;
+            if (rows.length != 1) {
+                callback(false);
+                return;
+            }
+            const row = rows[0];
+            const samePassword = await bcrypt.compare(password, row.password);
+            if (!samePassword) callback(false);
+            else callback({
+                id: row["id"],
+                name: row["name"],
+                username: row["username"],
+                email: row["email"],
+                rooms: row["rooms"]
+            });
+        });
+    });
+
+    socket.on("get_rooms", (email, callback) => {
+        sql = "SELECT rooms FROM ?? WHERE email = ?";
+        database.query(sql, ["users", email], (errs, rows) => {
+            if (errs) throw errs;
+            const row = rows[0];
+            callback(row["rooms"]);
         });
     });
 

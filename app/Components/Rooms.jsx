@@ -9,16 +9,18 @@ import { faBan, faRecycle, faTrashCan } from "@fortawesome/free-solid-svg-icons"
 
 export default function Rooms({ route, navigation }) {
 
+    const socket = route.params?.socket;
+    const id = route.params?.id;
     const dbId = route.params?.dbId;
     console.warn("DB ID", dbId, route.params?.id);
-    const [socket, setSocket] = useState(null);
-    const [id, setId] = useState(null);
+    
     const [admin, setAdmin] = useState(null);
     const [user, setUser] = useState(null);
     const [username, setUsername] = useState(null);
     const [roomId, setRoomId] = useState(null);
     const [newDbId, setDbId] = useState(null);
     const [createdRoom, setCreatedRoom] = useState(route.params?.createdRoom);
+
     const leaveRoom = async () => {
         setTimeout(async () => {
             const keys = await AsyncStorage.getAllKeys();
@@ -40,19 +42,7 @@ export default function Rooms({ route, navigation }) {
         }, 0);
     };
 
-    useEffect(() => {
-        
-        let newSocket = io("http://192.168.1.14:3000");
-        newSocket.emit('new_connection', "Connected");
-        // console.warn("gg");
-        newSocket.on("get_id", newId => {
-            setId(newId);
-            // console.warn("salut", newId);
-        });
-        setSocket(newSocket);
-        console.warn("ok");
-        
-    }, []);
+    
 
     useEffect(async () => {
         if (dbId) await AsyncStorage.setItem("db_id", JSON.stringify(dbId));
@@ -84,7 +74,6 @@ export default function Rooms({ route, navigation }) {
     };
 
     const joinRoom = () => {
-        console.warn(socket.id);
         navigation.navigate('JoinRoom', {id: id, socket: socket});
     };
 

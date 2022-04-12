@@ -10,8 +10,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#0D1D2B',
         borderWidth: 2,
         borderColor: "royalblue",
-        borderRadius: Platform.OS === "ios" ? 4 : 0
+        borderRadius: Platform.OS === "ios" ? 48 : 0
     },
+
+
 
     pageContainer: {
         minHeight: "100%",
@@ -21,8 +23,8 @@ const styles = StyleSheet.create({
     addButton: {
         flex: 1,
         position: 'absolute',
-        bottom: "12.5%",
-        left: 15,
+        bottom: "10%",
+        right: 15,
         justifyContent: "center",
         alignItems: "center",
         width: 60,
@@ -41,6 +43,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         height: "100%",
+        color: "#fff"
 
     }
 });

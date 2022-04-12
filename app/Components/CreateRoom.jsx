@@ -5,14 +5,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import styles from "../Styles/CreateStyles";
 
 export default function CreateRoom({ route, navigation }) {
-    console.warn("hello");
     const { id, socket } = route.params;
     console.warn(id);
 
     const [roomName, changeRoomName] = useState(null);
-    const [adminName, setAdminName] = useState(null);
-    const [email, setEmail] = useState(null);
-    const [password, setPassword] = useState(null);
 
     const [isKBVisible, setKBVisible] = useState(false);
     const [roomId, setRoomId] = useState(null);
@@ -22,7 +18,7 @@ export default function CreateRoom({ route, navigation }) {
             const keys = await AsyncStorage.getAllKeys();
             keys.forEach(async key => {
                 const element = await AsyncStorage.getItem(key);
-                console.warn(element);
+                console.warn(key, element);
             });
         } catch(e) {
             console.warn("error 1", e);
@@ -66,19 +62,10 @@ export default function CreateRoom({ route, navigation }) {
     }, []);
 
     const submitCreate = async () => {
-        if (roomName.length < 4 || adminName.length < 3) return;
+        if (roomName.length < 4) return;
         
-        console.warn(roomName, adminName);
-        const room = {
-            roomId: roomId, 
-            roomName: roomName,
-            admin: adminName,
-            id: id
-        };
-        
-        await _storeData("room", room);
-        
-        navigation.navigate('Geolocation', {...route.params, roomId, roomName, adminName, email, password});
+        const email = await AsyncStorage.getItem("email");
+        navigation.navigate('Geolocation', {...route.params, roomId, roomName, email});
     };
     
     return roomId && (
@@ -99,33 +86,6 @@ export default function CreateRoom({ route, navigation }) {
                     placeholderTextColor="rgba(255, 255, 255, .6)"
                 />
 
-                <TextInput
-                    style={styles.input}
-                    onChangeText={setAdminName}
-                    value={adminName}
-                    placeholder="Your full name..."
-                    keyboardAppearance="dark"
-                    placeholderTextColor="rgba(255, 255, 255, .6)"
-                />
-
-                <TextInput
-                    style={styles.input}
-                    onChangeText={setEmail}
-                    value={email}
-                    placeholder="Your email...."
-                    keyboardAppearance="dark"
-                    placeholderTextColor="rgba(255, 255, 255, .6)"
-                />
-
-                <TextInput
-                    style={styles.input}
-                    onChangeText={setPassword}
-                    value={password}
-                    placeholder="Your password...."
-                    keyboardAppearance="dark"
-                    secureTextEntry={true}
-                    placeholderTextColor="rgba(255, 255, 255, .6)"
-                />
 
                 <View style={styles.idContainer}>
                     <Text style={(styles.bottomText, styles.whiteText)}>Your id is: 
