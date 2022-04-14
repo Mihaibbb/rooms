@@ -13,7 +13,9 @@ export default function Rooms({ route, navigation }) {
     const id = route.params?.id;
     const dbId = route.params?.dbId;
     console.warn("DB ID", dbId, route.params?.id);
+
     
+
     const [admin, setAdmin] = useState(null);
     const [user, setUser] = useState(null);
     const [username, setUsername] = useState(null);

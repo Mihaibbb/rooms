@@ -7,7 +7,7 @@ import styles from "../Styles/HomeStyles";
 
 export default function Home({ route, navigation }) {
 
-    const {id, socket, roomId, roomName, email} = route.params;
+    const {socket, id, email, username, fullName, roomId, roomName} = route.params;
 
     const [location, setLocation] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
@@ -80,7 +80,7 @@ export default function Home({ route, navigation }) {
         
     };
 
-    const setNewCorner = () => {
+    const setNewCorner = async () => {
         if (corners.length === 4) return;
         
         let newCorners = [...corners, {
@@ -90,10 +90,10 @@ export default function Home({ route, navigation }) {
 
         setCorners(newCorners);
 
-        if (newCorners.length === 4) getRoomCoordinates();
+        if (newCorners.length === 4) await getRoomCoordinates();
     };
 
-    const getRoomCoordinates = () => {
+    const getRoomCoordinates = async () => {
         let newMinLat = Number.POSITIVE_INFINITY, newMinLong = Number.POSITIVE_INFINITY;
         let newMaxLat = Number.NEGATIVE_INFINITY, newMaxLong = Number.NEGATIVE_INFINITY;
         corners.forEach(corner => {
@@ -109,14 +109,20 @@ export default function Home({ route, navigation }) {
         setMaxLong(newMaxLong);
         setStart(true);
 
-        socket.emit("create_room", roomId, roomName, inRoom === null ? 0 : inRoom, `${newMinLat} ${newMaxLat} ${newMinLong} ${newMaxLong}`, id, email);
+        const geolocationData = `${newMinLat} ${newMaxLat} ${newMinLong} ${newMaxLong}`;
+        socket.emit("create_room", roomId, roomName, inRoom === null ? 0 : inRoom, geolocationData, socket.id, email, username, fullName);
+        console.warn("This is the email: ", email);
+        console.warn("This is the socket id: ", socket.id);
         socket.emit("get_rooms", email, async rooms => {
             const newRooms = rooms ? JSON.parse(rooms) : [];
-            
             newRooms.push({
                 roomId: roomId,
                 roomName: roomName,
-                admin: true
+                name: fullName,
+                username: username,
+                admin: true,
+                userStatus: !inRoom ? 0 : inRoom,
+                geolocation: geolocationData
             });
 
             await AsyncStorage.setItem("rooms", JSON.stringify(newRooms));
@@ -143,7 +149,7 @@ export default function Home({ route, navigation }) {
                 <TouchableOpacity
                     style={styles.buttonContainer}
                     underlayColor="rgb(255, 255, 255)"
-                    onPress={() => setNewCorner()}
+                    onPress={async () => await setNewCorner()}
                 >
                     <Text style={styles.buttonText}>Get corners of room</Text>
                 </TouchableOpacity>

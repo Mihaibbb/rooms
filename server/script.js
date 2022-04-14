@@ -30,24 +30,36 @@ io.on("connection", socket => {
     sockets.push(socket.id);
     // console.log("Socket connected", sockets);
     
-    let users = 0;
+    let users = 0, sql;
 
     socket.on("new_connection", msg => {
         users++;
         console.log(sockets[users - 1]);
         console.log("New connection", sockets[users - 1]);
-        io.emit("get_id", sockets[users - 1]);
+        io.to(socket.id).emit("get_id", sockets[users - 1]);
     });
 
-    socket.on("create_room", (roomId, roomName, currStatus, coords, id, email) => {
-        console.log("is socket id the same? ", socket.id === id);
-        const placeholders = [roomId, id, currStatus, coords, roomName, email, null];
-        let sql = 'CREATE TABLE ?? (id INT AUTO_INCREMENT PRIMARY KEY NOT NULL, ';
+    socket.on("get_user_data", (email, callback) => {
+        sql = "SELECT * FROM ?? WHERE email = ?";
+        database.query(sql, ["users", email], (err, rows) => {
+            if (err) throw err;
+            if (rows.length !== 1) callback(false);
+            console.log("Type: ", JSON.parse(rows[0]["rooms"]))
+            callback({...rows[0], rooms: JSON.parse(rows[0]["rooms"])});
+        });
+    });
+
+    socket.on("create_room", (roomId, roomName, currStatus, coords, id, email, username, name) => {
+        console.log("is socket id the same? ", socket.id === id, socket.id, id);
+        const placeholders = [roomId, id, currStatus, coords, roomName, email, username, name, null];
+        sql = 'CREATE TABLE ?? (id INT AUTO_INCREMENT PRIMARY KEY NOT NULL, ';
         sql += 'socket_id VARCHAR(255) NOT NULL, ';
         sql += 'user_status BOOLEAN NOT NULL, ';
         sql += 'geolocation VARCHAR(255), ';
         sql += 'room_name VARCHAR(255), ';
-        sql += 'email VARCHAR(255), ';
+        sql += 'email VARCHAR(255) NOT NULL, ';
+        sql += 'username VARCHAR(255) NOT NULL, ';
+        sql += 'name VARCHAR(255) NOT NULL, ';
         sql += 'virtual_id VARCHAR(255));';
 
         database.query(sql, [roomId], (err, result) => {
@@ -58,7 +70,7 @@ io.on("connection", socket => {
             console.log("Success create table");
         });
         
-        sql = 'INSERT INTO ?? (socket_id, user_status, geolocation, room_name, email, virtual_id) VALUES (?, ?, ?, ?, ?, ?)';
+        sql = 'INSERT INTO ?? (socket_id, user_status, geolocation, room_name, email, username, name, virtual_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
         database.query(sql, placeholders,  (err, result) => {
             if (err) {
                 console.log(err.message);
@@ -69,44 +81,40 @@ io.on("connection", socket => {
         });
     });
 
-    socket.on("join_room", async (roomId, fullName, userName, currStatus, id, email) => {
+    socket.on("join_room", async (roomId, currStatus, id, email, username, name) => {
         console.log("id", roomId);
         
         sql = "SELECT room_name, geolocation FROM ?? WHERE id=1";
         database.query(sql, [roomId], (err, rows, fields) => {
-            if (err) {
-                console.log('Error', err);
-                throw err;
-            }
-            console.log("Rows: ", rows);
+            if (err) throw err;
             if (!rows || rows?.length === 0) return;
+
             const adminField = rows[0];
             console.log(adminField);
             const roomName = adminField["room_name"];
             const geolocation = adminField["geolocation"];
-            console.log(roomName, geolocation);
-            const placeholders = [roomId, id, fullName, userName, currStatus, geolocation, roomName, email, null];
-            sql = "INSERT INTO ?? (socket_id, name, username, user_status, geolocation, room_name, email, virtual_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+            const placeholders = [roomId, id, currStatus, geolocation, roomName, email, username, name, null];
+            sql = 'INSERT INTO ?? (socket_id, user_status, geolocation, room_name, email, username, name, virtual_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+            
             database.query(sql, placeholders, (err, result) => {
                 if (err) {
                     console.log(err.message);
                     throw err;
                 }
                 console.log(result);
+                const id = result.insertId;
+                io.to(socket.id).emit("db_id", parseInt(id));
                 console.log("User registered");
+                let newSql = "SELECT username, user_status from ??";
+
+                database.query(newSql, [roomId], (err, rows, fields) => {
+                    console.log(rows);
+                    io.to(socket.id).emit("change_users", rows);
+                });
             });
 
-            sql = "SELECT id FROM ??";
-            database.query(sql, [roomId], (err, rows, fields) => {
-                const dbId = rows[rows.length - 1]["id"];
-                io.to(socket.id).emit("db_id", parseInt(dbId));
-            });
-
-            sql = "SELECT username, user_status from ??";
-            database.query(sql, [roomId], (err, rows, fields) => {
-                console.log(rows);
-                io.to(socket.id).emit("change_users", rows);
-            });
+            
         });
     });
 
@@ -164,7 +172,7 @@ io.on("connection", socket => {
         database.query(sql, [roomId], (err, rows, fields) => {
             if (err) throw err;
             console.log(rows);
-            io.emit("change_users", rows);
+            io.to(socket.id).emit("change_users", rows);
         });        
     });
     
@@ -193,7 +201,8 @@ io.on("connection", socket => {
     });
 
     socket.on("update_rooms", (email, rooms) => {
-        sql = "UPDATE FROM ?? SET rooms = ? WHERE email = ?";
+        sql = "UPDATE ?? SET rooms = ? WHERE email = ?";
+        console.log("Rooms: ", rooms);
         database.query(sql, ["users", rooms, email], (err, result) => {
             if (err) throw err;
             console.log(result);
@@ -252,33 +261,45 @@ io.on("connection", socket => {
         });
     });
 
-    socket.on("login", async (email, password, callback) => {
-        sql = "SELECT password from ?? WHERE email = ?";
+    socket.on("login", (email, password, callback) => {
+        sql = "SELECT * from ?? WHERE email = ?";
         database.query(sql, ["users", email], async (errs, rows) => {
             if (errs) throw errs;
             if (rows.length != 1) {
                 callback(false);
                 return;
             }
+            console.log("here");
             const row = rows[0];
             const samePassword = await bcrypt.compare(password, row.password);
+            console.log("Same password: ", samePassword);
+            console.log("This row: ", row);
             if (!samePassword) callback(false);
-            else callback({
-                id: row["id"],
-                name: row["name"],
-                username: row["username"],
-                email: row["email"],
-                rooms: row["rooms"]
-            });
+            else callback({...row, rooms: row["rooms"] && JSON.parse(row["rooms"])});
         });
     });
 
     socket.on("get_rooms", (email, callback) => {
-        sql = "SELECT rooms FROM ?? WHERE email = ?";
+        sql = "SELECT * FROM ?? WHERE email = ?";
         database.query(sql, ["users", email], (errs, rows) => {
             if (errs) throw errs;
+            
+            console.log(rows, email);
+            if (rows.length !== 1) {
+                callback(false);
+                return;
+            }
             const row = rows[0];
-            callback(row["rooms"]);
+            if (!row["rooms"]) callback(false);
+            else callback(row["rooms"]);
+        });
+    });
+
+    socket.on("get_room_data", (roomId, callback) => {
+        sql = "SELECT * FROM ??";
+        database.query(sql, [roomId], (err, rows) => {
+            if (err) throw err;
+            callback(rows);
         });
     });
 

@@ -6,15 +6,15 @@ import styles from "../Styles/HomeStyles";
 
 export default function AddRoom({ navigation, route }) {
 
-    const {socket, id, admin, user, roomId, newDbId} = route.params;
+    const {socket, id, email, username, fullName} = route.params;
    
-
+    console.warn("email: ", email);
     const createRoom = () => {
-        navigation.navigate('CreateRoom', {id: id, socket: socket});
+        navigation.navigate('CreateRoom', route.params);
     };
 
     const joinRoom = () => {
-        navigation.navigate('JoinRoom', {id: id, socket: socket});
+        navigation.navigate('JoinRoom', route.params);
     };
 
     return (

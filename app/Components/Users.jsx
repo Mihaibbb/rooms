@@ -9,18 +9,9 @@ import styles from "../Styles/UsersStyles";
 
 export default function Users({route, navigation}) {
 
-    const {id, socket} = route.params;
+    const {id, socket, roomId, email} = route.params;
 
-    // whsded
-
-    const [roomId, setRoomId] = useState(null);
     const [rows, setRows] = useState([]);
-
-    useEffect(async () => {
-        const room = await AsyncStorage.getItem("roomId");
-        console.warn("room detect", room)
-        setRoomId(room);
-    }, []);
 
     useEffect(() => {
         console.warn("Rows", rows);
@@ -45,13 +36,16 @@ export default function Users({route, navigation}) {
         <ScrollView>
             <View style={styles.container}>
             <View style={styles.title}>
-                <Text style={styles.titleText}>Room's name:
+                <Text style={styles.titleText}>
+                    
+                </Text>
+                <Text style={styles.textId}>Room's ID:
                     <Text style={styles.bold}> {roomId}</Text>
                 </Text> 
             </View>
             {rows.map((row, rowIdx) => { return (
                 <View style={styles.element} key={rowIdx}>
-                    <Text style={styles.text}>{row["username"]}</Text>
+                    <Text style={styles.text}>{`${row["username"]} ${row["email"] === email ? "(You)" : ""}`}</Text>
                     { row["user_status"] ? (
                         <FontAwesomeIcon 
                             icon={faCheck}

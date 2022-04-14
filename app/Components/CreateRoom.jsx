@@ -5,7 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import styles from "../Styles/CreateStyles";
 
 export default function CreateRoom({ route, navigation }) {
-    const { id, socket } = route.params;
+    const {socket, id, email, username, fullName} = route.params;
+
     console.warn(id);
 
     const [roomName, changeRoomName] = useState(null);
@@ -63,9 +64,9 @@ export default function CreateRoom({ route, navigation }) {
 
     const submitCreate = async () => {
         if (roomName.length < 4) return;
-        
-        const email = await AsyncStorage.getItem("email");
-        navigation.navigate('Geolocation', {...route.params, roomId, roomName, email});
+        console.warn("email", email);
+        if (!email) return;
+        navigation.navigate('Geolocation', {...route.params, roomId, roomName, username, fullName});
     };
     
     return roomId && (

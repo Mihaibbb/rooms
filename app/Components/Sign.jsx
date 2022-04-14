@@ -24,20 +24,6 @@ export default function Sign({ route, navigation }) {
 
     const [isKBVisible, setKBVisible] = useState(false);
 
-    // useEffect(async () => {
-    //     try {
-    //         const keys = await AsyncStorage.getAllKeys();
-    //         keys.forEach(async key => {
-    //             const element = await AsyncStorage.getItem(key);
-    //             console.warn(element);
-    //         });
-    //     } catch(e) {
-    //         console.warn("error 1", e);
-    //     }    
-       
-    // }, []);
-    // console.warn(socket);
-
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => setKBVisible(true));
         const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => setKBVisible(false));
@@ -85,7 +71,7 @@ export default function Sign({ route, navigation }) {
             errors += "Email doesn't have a valid form.";
         };
 
-        socket.emit("account_exists", email, username, async (sameAcc) => {
+        socket.emit("account_exists", email, username, (sameAcc) => {
             if (sameAcc) errors += "The account has already been registered.";
             
             let newErrs = errors.split(".");
@@ -101,8 +87,16 @@ export default function Sign({ route, navigation }) {
                     logged: true
                 };
 
-                await _storeData(room);
-                setTimeout(() => navigation.navigate('Rooms', {dbId: foundDbId}), 500);
+                username && await AsyncStorage.setItem("username", JSON.stringify(username));
+                fullName && await AsyncStorage.setItem("name", JSON.stringify(fullName));
+                await AsyncStorage.setItem("logged", JSON.stringify(true));
+                id && await AsyncStorage.setItem("id", JSON.stringify(id));
+                email && await AsyncStorage.setItem("email", JSON.stringify(email));
+                
+                console.warn(await AsyncStorage.getItem("email"));
+                
+                //await _storeData(room);
+                setTimeout(() => navigation.navigate('Rooms', {rooms: []}), 500);
             });
            
         });
@@ -124,24 +118,27 @@ export default function Sign({ route, navigation }) {
             setErrors(newErrs);
             if (errors.length > 0) return;
             console.warn("ROOMS", foundDbId.rooms);
-            const room = {
-                name: foundDbId.name,
-                username: foundDbId.username,
-                id: id,
-                dbId: foundDbId.id,
-                email: foundDbId.email,
-                rooms: foundDbId.rooms,
-                logged: true
-            };
             
-            console.warn("ID: ", foundDbId.id);
+            console.warn("ID: ", foundDbId.id, foundDbId.username, foundDbId);
             console.warn("FINALLY 2");
-            
-            await _storeData(room);
-            
+            try {
+                
+                foundDbId.username && await AsyncStorage.setItem("username", JSON.stringify(foundDbId.username));
+                foundDbId.name && await AsyncStorage.setItem("name", JSON.stringify(foundDbId.name));
+                await AsyncStorage.setItem("logged", JSON.stringify(true));
+                id && await AsyncStorage.setItem("id", JSON.stringify(id));
+                emailAccount && await AsyncStorage.setItem("email", JSON.stringify(emailAccount));
+                foundDbId.rooms && JSON.parse(foundDbId.rooms) && await AsyncStorage.setItem("rooms", JSON.stringify(foundDbId.rooms));
+                //await _storeData(room);
+                
+                console.warn(JSON.parse(await AsyncStorage.getItem("username")));
+            } catch (e) {
+                console.warn("Error sign: ", e);
+            }
+           
             console.warn("In socket dbId", foundDbId.id);
 
-            setTimeout(() => navigation.navigate('Rooms', {dbId: foundDbId.id}), 500);
+            setTimeout(() => navigation.navigate('Rooms', {rooms: foundDbId.rooms}), 500);
         });
 
     };

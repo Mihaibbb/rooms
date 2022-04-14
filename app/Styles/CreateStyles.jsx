@@ -53,7 +53,6 @@ const styles = StyleSheet.create({
         width: "100%"
     },
 
-
     bottomText: {
         textAlign: 'center',
         fontSize: 20 

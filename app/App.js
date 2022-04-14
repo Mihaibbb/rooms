@@ -1,5 +1,3 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Home from './Components/Home';
@@ -10,10 +8,12 @@ import Users from './Components/Users';
 import Rooms from './Components/Rooms';
 import AddRoom from './Components/AddRoom';
 import Sign from './Components/Sign';
+import Account from './Components/Account';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ 
@@ -32,6 +32,7 @@ export default function App() {
         <Stack.Screen name="CreateRoom" component={CreateRoom} options={{ title: 'Create room' }} />
         <Stack.Screen name="JoinRoom" component={JoinRoom} options={{ title: 'Join room' }} />
         <Stack.Screen name="Users" component={Users} options={{ title: 'Users status' }} />
+        <Stack.Screen name="Account" component={Account} />
       </Stack.Navigator>
     </NavigationContainer>
   );
