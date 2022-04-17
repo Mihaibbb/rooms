@@ -1,7 +1,7 @@
 import React, {useState, useEffect} from "react";
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager'; 
-import AsyncStorageLib from "@react-native-async-storage/async-storage";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function UserGeolocation({socket, id, rooms }) {
 
@@ -74,7 +74,7 @@ export default function UserGeolocation({socket, id, rooms }) {
             const maxLong = geolocationData[3].toFixed(4);
             const oldStatus = newRooms[idx]["userStatus"];
             newRooms[idx]["userStatus"] = longitude >= minLong && longitude <= maxLong && latitude >= minLat && latitude <= maxLat;
-            oldStatus !== newRooms[idx]["userStatus"] && socket.emit("change_status", currRoom["roomId"], newRooms[idx]["userStatus"], id);
+            oldStatus !== newRooms[idx]["userStatus"] && socket.emit("change_status", currRoom["roomId"], currRoom["userStatus"], currRoom["id"]);
             setRooms(newRooms);
             socket.emit("update_rooms", email, JSON.stringify(newRooms));
         });

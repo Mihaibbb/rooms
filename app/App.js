@@ -1,3 +1,4 @@
+import {useEffect} from "react";
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Home from './Components/Home';
@@ -9,10 +10,14 @@ import Rooms from './Components/Rooms';
 import AddRoom from './Components/AddRoom';
 import Sign from './Components/Sign';
 import Account from './Components/Account';
+import * as Network from "expo-network";
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+
+
+  
 
   return (
     <NavigationContainer>

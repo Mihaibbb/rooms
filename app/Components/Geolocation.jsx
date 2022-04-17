@@ -3,7 +3,7 @@ import { View, ScrollView, Text, Platform, TouchableOpacity } from "react-native
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager'; 
-import styles from "../Styles/HomeStyles";     
+import styles from "../Styles/GeolocationStyles";     
 
 export default function Home({ route, navigation }) {
 
@@ -114,7 +114,7 @@ export default function Home({ route, navigation }) {
         console.warn("This is the email: ", email);
         console.warn("This is the socket id: ", socket.id);
         socket.emit("get_rooms", email, async rooms => {
-            const newRooms = rooms ? JSON.parse(rooms) : [];
+            const newRooms = rooms || [];
             newRooms.push({
                 roomId: roomId,
                 roomName: roomName,
@@ -122,7 +122,8 @@ export default function Home({ route, navigation }) {
                 username: username,
                 admin: true,
                 userStatus: !inRoom ? 0 : inRoom,
-                geolocation: geolocationData
+                geolocation: geolocationData,
+                id: 1,
             });
 
             await AsyncStorage.setItem("rooms", JSON.stringify(newRooms));
@@ -137,13 +138,17 @@ export default function Home({ route, navigation }) {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.corners}>{!start ? `Corners set: ${corners.length}` : ""}</Text>
-            {longitude && (
-                <Text style={styles.coords}>Longitude: {longitude}</Text>
-            )}
-            {latitude && (
-                <Text style={styles.coords}>Latitude: {latitude}</Text>
-            )}
+            <View style={styles.cornerContainer}>
+                <Text style={styles.corners}>{!start ? `Corners set: ${corners.length}` : ""}</Text>
+            </View>
+            <View style={styles.coordsContainer}>
+                {longitude && (
+                    <Text style={styles.coords}>Longitude: {longitude}</Text>
+                )}
+                {latitude && (
+                    <Text style={styles.coords}>Latitude: {latitude}</Text>
+                )}
+            </View>
 
             {longitude && latitude && 
                 <TouchableOpacity
@@ -151,7 +156,7 @@ export default function Home({ route, navigation }) {
                     underlayColor="rgb(255, 255, 255)"
                     onPress={async () => await setNewCorner()}
                 >
-                    <Text style={styles.buttonText}>Get corners of room</Text>
+                    <Text style={styles.buttonText}>Set corners of the room</Text>
                 </TouchableOpacity>
             }  
             <View style={styles.results}>    

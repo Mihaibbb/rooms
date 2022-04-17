@@ -78,14 +78,15 @@ io.on("connection", socket => {
             }
             console.log(result);
             console.log("Admin registered");
+            socket.join(`room:${roomId}`);
         });
     });
 
     socket.on("join_room", async (roomId, currStatus, id, email, username, name) => {
-        console.log("id", roomId);
         
         sql = "SELECT room_name, geolocation FROM ?? WHERE id=1";
         database.query(sql, [roomId], (err, rows, fields) => {
+            
             if (err) throw err;
             if (!rows || rows?.length === 0) return;
 
@@ -98,23 +99,63 @@ io.on("connection", socket => {
             sql = 'INSERT INTO ?? (socket_id, user_status, geolocation, room_name, email, username, name, virtual_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
             
             database.query(sql, placeholders, (err, result) => {
-                if (err) {
-                    console.log(err.message);
-                    throw err;
-                }
+                if (err) throw err;
+                
                 console.log(result);
                 const id = result.insertId;
                 io.to(socket.id).emit("db_id", parseInt(id));
                 console.log("User registered");
                 let newSql = "SELECT username, user_status from ??";
 
-                database.query(newSql, [roomId], (err, rows, fields) => {
+                database.query(newSql, [roomId], (errs, rows, fields) => {
+                    if (errs) throw errs;
                     console.log(rows);
-                    io.to(socket.id).emit("change_users", rows);
+                    socket.join(`room:${roomId}`)
+                    io.to(`room:${roomId}`).emit("change_users", rows);
                 });
             });
 
+        });
+    });
+
+    socket.on("delete_user", (email) => {
+        sql = "DELETE FROM ?? WHERE email = ?";
+        database.query(sql, ["users", email], (err, result) => {
+            if (err) throw err;
+        })
+    });
+
+    socket.on("delete_room", (roomId) => {
+        sql = "DROP TABLE ??";
+        database.query(sql, [roomId], (err, result) => {
+            if (err) throw err;
+            console.log(result);
+        });
+    });
+
+    socket.on("delete_user_room", (roomId, email) => {
+        sql = "DELETE FROM ?? WHERE email = ?";
+        database.query(sql, [roomId, email], (err, result) => {
+            if (err) throw err;
+            console.log(result);
+        });
+    }); 
+
+    socket.on("remove_users_room", (username) => {
+        sql = "SELECT * FROM ??";
+        database.query(sql, ["users"], (err, rows) => {
+            if (err) throw err;
+            if (!rows) return;
+            if (rows.length === 0) return;
             
+            rows.forEach(row => {
+                const rooms = JSON.parse(row["rooms"]);
+                const leftRooms = rooms.filter(room => room.username !== username);
+                const sqlUpdate = "UPDATE ?? SET rooms = ? WHERE id = ?";
+                database.query(sqlUpdate, ["users", leftRooms, row["id"]], (err, result) => {
+                    if (err) throw err;
+                })
+            });
         });
     });
 
@@ -130,7 +171,8 @@ io.on("connection", socket => {
                 if (err) throw err;
             });
         }
-       
+        
+        socket.leave(`room:${roomId}`);
     });
 
 
@@ -148,10 +190,9 @@ io.on("connection", socket => {
             if (err) throw err;
             if (!rows) return;
             console.log(rows)
-            io.to(socket.id).emit("get_coords", rows[0]["geolocation"]);
+            io.to(`room:${roomId}`).emit("get_coords", rows[0]["geolocation"]);
         })
     });
-
    
 
     socket.on("change_status", (roomId, status, id=1) => {
@@ -172,7 +213,7 @@ io.on("connection", socket => {
         database.query(sql, [roomId], (err, rows, fields) => {
             if (err) throw err;
             console.log(rows);
-            io.to(socket.id).emit("change_users", rows);
+            io.to(`room:${roomId}`).emit("change_users", rows);
         });        
     });
     
@@ -196,7 +237,6 @@ io.on("connection", socket => {
                     response(row["room_name"]);
                 });
             }
-            
         });
     });
 
@@ -209,8 +249,25 @@ io.on("connection", socket => {
         });
     });
 
-    socket.on("same_account", (email, password, roomId, callback) => {
+    socket.on("update_user_rooms", (email, newEmail, newUsername, newName, rooms) => {
+        if (!rooms) return;
+        JSON.parse(rooms).forEach(room => {
+            sql = "UPDATE ?? SET email = ?, username = ?, name = ? WHERE email = ?";
+            database.query(sql, [room.roomId, newEmail, newUsername, newName, email], (err, result) => {
+                if (err) throw err;
+                console.log(result);
+            });
 
+            sql = "SELECT * FROM ??";
+            database.query(sql, [room.roomId], (err, rows) => {
+                if (err) throw err;
+                console.log("Here in here");
+                io.to(`socket:${room.roomId}`).emit("change_users", rows);
+            });
+        });
+    });
+
+    socket.on("same_account", (email, password, roomId, callback) => {
         sql = "SELECT email, password FROM ?? WHERE email=?";
         database.query(sql, [roomId, email, password], (err, rows, fields) => {
             if (err) throw err;
@@ -219,7 +276,6 @@ io.on("connection", socket => {
             else if (rows.length >= 1) callback(true);
             else callback(false);
         });
-
     });
 
     socket.on("found_account", (email, password, roomId, response) => {
@@ -279,6 +335,16 @@ io.on("connection", socket => {
         });
     });
 
+    socket.on("possible_changes", (username, email, callback) => {
+        sql = "SELECT * FROM ?? WHERE username = ? OR email = ?";
+        database.query(sql, ["users", username, email], (err, rows) => {
+            if (err) throw err;
+            console.log(rows);
+            if (rows.length > 0) callback(false);
+            else callback(true); 
+        });
+    });
+
     socket.on("get_rooms", (email, callback) => {
         sql = "SELECT * FROM ?? WHERE email = ?";
         database.query(sql, ["users", email], (errs, rows) => {
@@ -290,8 +356,19 @@ io.on("connection", socket => {
                 return;
             }
             const row = rows[0];
-            if (!row["rooms"]) callback(false);
-            else callback(row["rooms"]);
+            console.log(row, row["rooms"]);
+            if (!row["rooms"] || row["rooms"].length === 0) callback(false);
+            else callback(JSON.parse(row["rooms"]));
+        });
+    });
+
+    socket.on("room_dbId", (roomId, username, callback) => {
+        sql = "SELECT id FROM ?? WHERE username = ?";
+        database.query(sql, [roomId, username], (err, rows) => {
+            if (err) throw err;
+            if (!rows) callback(false);
+            else if (rows.length === 0) callback(false);
+            else callback(rows[0]["id"]);
         });
     });
 
@@ -300,6 +377,14 @@ io.on("connection", socket => {
         database.query(sql, [roomId], (err, rows) => {
             if (err) throw err;
             callback(rows);
+        });
+    });
+
+    socket.on("update_users", (initEmail, fullName, username, email) => {
+        sql = "UPDATE ?? SET name = ?, username = ?, email = ? WHERE email = ?";
+        database.query(sql, ["users", fullName, username, email,  initEmail], (err, result) => {
+            if (err) throw err;
+            console.log("Result: ", result);
         });
     });
 

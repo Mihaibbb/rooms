@@ -23,13 +23,13 @@ export default function Users({route, navigation}) {
             setRows(currRows);
 
         });
+
+        socket.on("change_users", currRows => {
+            console.warn("rows modified")
+            setRows(currRows);
+        });
+
     }, [roomId]);
-
-
-    socket.on("change_users", currRows => {
-        // console.warn("salut")
-        setRows(currRows);
-    });
    
 
     return (

@@ -85,19 +85,23 @@ export default function JoinRoom({ route, navigation }) {
                 socket.emit("get_room_data", roomIdAccount, async rows => {
                     const dbGeolocation = rows[0]["geolocation"];
                     const newRooms = await AsyncStorage.getItem("rooms") ? JSON.parse(await AsyncStorage.getItem("rooms")) : [];
-                    newRooms.push({
-                        roomId: roomIdAccount,
-                        roomName: roomName,
-                        admin: false,
-                        userStatus: 0,
-                        geolocation: dbGeolocation,
-                        username: rows[0]["username"],
-                        name: rows[0]["name"]
+                    socket.emit("room_dbId", roomIdAccount, username, async foundId => {
+                        if (!foundId) return;
+                        newRooms.push({
+                            roomId: roomIdAccount,
+                            roomName: roomName,
+                            admin: false,
+                            userStatus: 0,
+                            geolocation: dbGeolocation,
+                            username: rows[0]["username"],
+                            name: rows[0]["name"],
+                            id: foundId
+                        });
+    
+                        await AsyncStorage.setItem("rooms", JSON.stringify(newRooms));
+                        socket.emit("update_rooms", email, JSON.stringify(newRooms));
+                        setTimeout(() => navigation.navigate("Rooms", {rooms: newRooms}), 500);
                     });
-
-                    await AsyncStorage.setItem("rooms", JSON.stringify(newRooms));
-                    socket.emit("update_rooms", email, JSON.stringify(newRooms));
-                    setTimeout(() => navigation.navigate("Rooms", {rooms: newRooms}), 500);
                 });
                 
             });
