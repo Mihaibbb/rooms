@@ -1,4 +1,3 @@
-const { rejects } = require('assert');
 const express = require('express');
 const app = express();
 const server = require('http').Server(app);
@@ -18,7 +17,6 @@ const database = mysql.createConnection({
     port: '3306'
 });
 
-
 database.connect(err => {
     if (err) throw err;
     console.log('Mysql connected');
@@ -26,23 +24,49 @@ database.connect(err => {
 
 let sockets = [];
 
+const leftUsers = (id) => {
+    return sockets.filter(socketId => socketId !== id);
+};
+
 io.on("connection", socket => {
-    sockets.push(socket.id);
-    // console.log("Socket connected", sockets);
-    
+
     let users = 0, sql;
 
     socket.on("new_connection", msg => {
+        sockets.push(socket.id);
         users++;
         console.log(sockets[users - 1]);
-        console.log("New connection", sockets[users - 1]);
-        io.to(socket.id).emit("get_id", sockets[users - 1]);
+        console.log("New connection", sockets[users - 1], users);
+        io.to(socket.id).emit("get_id", socket.id);
     });
+
+    socket.on("update_id", (newId, email, rooms) => {
+        console.log("SOCKET", newId);
+        if (!newId) return;
+        sql = "UPDATE ?? SET virtual_id = ? WHERE email = ?";
+        database.query(sql, ["users", newId, email], (err, result) => {
+            if (err) throw err;
+            console.log("Updated socket id in users table");
+        });
+
+        if (!rooms) return;
+
+        rooms.forEach(room => {
+            sql = "UPDATE ?? SET socket_id = ? WHERE email = ?";
+            database.query(sql, [room.roomId, newId, email], (err, result) => {
+                if (err) throw err;
+                console.log("Update socket id in room table");
+            });
+        });
+    });
+
+
 
     socket.on("get_user_data", (email, callback) => {
         sql = "SELECT * FROM ?? WHERE email = ?";
         database.query(sql, ["users", email], (err, rows) => {
             if (err) throw err;
+            if (!rows) return;
             if (rows.length !== 1) callback(false);
             console.log("Type: ", JSON.parse(rows[0]["rooms"]))
             callback({...rows[0], rooms: JSON.parse(rows[0]["rooms"])});
@@ -212,7 +236,8 @@ io.on("connection", socket => {
         sql = "SELECT username, user_status from ??";
         database.query(sql, [roomId], (err, rows, fields) => {
             if (err) throw err;
-            console.log(rows);
+            console.log("Rows: ", rows);
+            if (!rows) return;
             io.to(`room:${roomId}`).emit("change_users", rows);
         });        
     });
@@ -245,7 +270,7 @@ io.on("connection", socket => {
         console.log("Rooms: ", rooms);
         database.query(sql, ["users", rooms, email], (err, result) => {
             if (err) throw err;
-            console.log(result);
+            console.log("Updated rooms", result);
         });
     });
 
@@ -330,8 +355,18 @@ io.on("connection", socket => {
             const samePassword = await bcrypt.compare(password, row.password);
             console.log("Same password: ", samePassword);
             console.log("This row: ", row);
-            if (!samePassword) callback(false);
-            else callback({...row, rooms: row["rooms"] && JSON.parse(row["rooms"])});
+            if (!samePassword) {
+                callback(false);
+                return;
+            }
+
+            const updateSql = "UPDATE ?? SET virtual_id = ? WHERE email = ?";
+            database.query(updateSql, ["users", socket.id, email], (err, result) => {
+                if (err) throw err;
+                console.log("Updated socket id");
+                callback({...row, rooms: row["rooms"] && JSON.parse(row["rooms"]), virtual_id: socket.id});
+            });
+
         });
     });
 
@@ -397,10 +432,22 @@ io.on("connection", socket => {
             await response(rows[0]["username"]);
         });
     });
+
+    // Subrooms
     
+    socket.on("get_subrooms", (roomId, username, callback) => {
+        sql = "SELECT * FROM ?? WHERE username = ?";
+        database.query(sql, ["users", username], (err, rows) => {
+            if (err) throw err;
+            const rooms = JSON.parse(rows[0]["rooms"]);
+            const room = rooms.find(room => room.roomId === roomId);
+            callback(room.subRooms);
+        });
+    });
+
     socket.on("disconnect", () => {
         console.log( "Socked disconnected", sockets);
-        sockets.forEach((existingSocket, idx) => existingSocket === socket.id ? sockets.splice(idx, 1) : null);
+        sockets = leftUsers(socket.id);
     });
    
 }); 

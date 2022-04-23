@@ -7,7 +7,7 @@ import styles from "../Styles/CreateStyles";
 export default function CreateRoom({ route, navigation }) {
     const {socket, id, email, username, fullName} = route.params;
 
-    console.warn(id);
+    console.log(id);
 
     const [roomName, changeRoomName] = useState(null);
 
@@ -19,14 +19,14 @@ export default function CreateRoom({ route, navigation }) {
             const keys = await AsyncStorage.getAllKeys();
             keys.forEach(async key => {
                 const element = await AsyncStorage.getItem(key);
-                console.warn(key, element);
+                console.log(key, element);
             });
         } catch(e) {
-            console.warn("error 1", e);
+            console.log("error 1", e);
         }    
        
     }, []);
-    // console.warn(socket);
+    // console.log(socket);
 
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => setKBVisible(true));
@@ -38,33 +38,43 @@ export default function CreateRoom({ route, navigation }) {
     }, []);
 
     const _storeData = async (key, value) => {
-        console.warn('work', value);
+        console.log('work', value);
         try {
             const keys = Object.keys(value);
             keys.forEach(async (keyName) => {
                 await AsyncStorage.setItem(keyName, value[keyName]);
             });
         } catch (e) {
-            console.warn("Error from here", e);
+            console.log("Error from here", e);
         };
 
         try {
             const item = await AsyncStorage.getItem(key);
             console.log("Item", item);
         } catch(e) {
-            console.warn("error", e);
+            console.log("error", e);
         }
 
     };
 
     useEffect(() => {
-        const newRoomId = Math.random().toString(36).substring(2, 8);
+        let newRoomId = Math.random().toString(36).substring(2, 8);
+        while (roomExists(newRoomId)) {
+            newRoomId = Math.random().toString(36).substring(2, 8);
+        }
         setRoomId(newRoomId);
     }, []);
 
+    const roomExists = (id) => {
+        socket.emit("room_exists", id, res => {
+            if (!res) return false;
+            return true;
+        });
+    };
+
     const submitCreate = async () => {
         if (roomName.length < 4) return;
-        console.warn("email", email);
+        console.log("email", email);
         if (!email) return;
         navigation.navigate('Geolocation', {...route.params, roomId, roomName, username, fullName});
     };
@@ -72,7 +82,7 @@ export default function CreateRoom({ route, navigation }) {
     return roomId && (
         <TouchableWithoutFeedback onPress={() => isKBVisible ? Keyboard.dismiss() : null}>
             <View style={styles.container}>
-
+                
 
                 <Text style={styles.normText}>Your new room id is: 
                     <Text style={styles.idText}> {roomId}</Text>

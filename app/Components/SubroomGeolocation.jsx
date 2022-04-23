@@ -7,7 +7,7 @@ import styles from "../Styles/GeolocationStyles";
 
 export default function Home({ route, navigation }) {
 
-    const {socket, id, email, username, fullName, roomId, roomName} = route.params;
+    const {socket, id, email, roomId, roomName, subroomId, subroomName} = route.params;
 
     const [location, setLocation] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
@@ -106,41 +106,35 @@ export default function Home({ route, navigation }) {
         setStart(true);
 
         const geolocationData = `${newMinLat} ${newMaxLat} ${newMinLong} ${newMaxLong}`;
-        socket.emit("create_room", roomId, roomName, inRoom === null ? 0 : inRoom, geolocationData, id, email, username, fullName);
         console.warn("This is the email: ", email);
         console.warn("This is the socket id: ", id);
         console.warn("HERE");
         socket.emit("get_rooms", email, async rooms => {
             const newRooms = rooms || [];
-            newRooms.push({
+          
+            let foundIdx;
+            newRooms.forEach((room, idx) => room.roomId === roomId ? foundIdx = idx : null);
+            newRooms[foundIdx].subRooms.push({
                 roomId: roomId,
                 roomName: roomName,
-                name: fullName,
-                username: username,
-                admin: true,
-                userStatus: !inRoom ? 0 : inRoom, 
+                userStatus: !inRoom ? 0 : inRoom,
                 geolocation: geolocationData,
-                id: 1,
-                subRooms: []
             });
 
-            console.warn("Old rooms: ", rooms);
-            console.warn("new rooms: ", newRooms);
             try {
                 await AsyncStorage.setItem("rooms", JSON.stringify(newRooms));
             } catch(e) {
                 console.error(e);
             }
-
             socket.emit("update_rooms", email, JSON.stringify(newRooms));
-            setTimeout(() => navigation.navigate("Rooms", { createdRoom: true, rooms: newRooms }), 750);
+            setTimeout(() => navigation.navigate("Rooms"), 750);
         });        
     };
 
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Room Geolocation</Text>
+            <Text style={styles.title}>Subroom Geolocation</Text>
             <View style={styles.content}>
                 <View style={styles.cornerContainer}>
                     <Text style={styles.corners}>{!start ? `Corners set: ${corners.length}` : ""}</Text>

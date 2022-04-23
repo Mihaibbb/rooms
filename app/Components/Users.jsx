@@ -14,18 +14,18 @@ export default function Users({route, navigation}) {
     const [rows, setRows] = useState([]);
 
     useEffect(() => {
-        console.warn("Rows", rows);
+        console.log("Rows", rows);
         if (!roomId) return;
         socket.emit("all_users", roomId, id);
 
         socket.on("get_rows", currRows => {
-            console.warn("My rows", currRows);
+            console.log("My rows", currRows);
             setRows(currRows);
 
         });
 
         socket.on("change_users", currRows => {
-            console.warn("rows modified")
+            console.log("rows modified")
             setRows(currRows);
         });
 
@@ -63,7 +63,7 @@ export default function Users({route, navigation}) {
             )})}
             </View>
 
-            <UserGeolocation roomId={roomId} socket={socket} id={1}/>
+            <UserGeolocation roomId={roomId} socket={socket} id={1} email={email}/>
         </ScrollView>
         
     );

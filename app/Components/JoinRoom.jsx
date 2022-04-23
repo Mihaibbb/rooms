@@ -66,14 +66,14 @@ export default function JoinRoom({ route, navigation }) {
                 return;
             }
 
-            const roomName = response.roomName;
+            const roomName = response["room_name"];
             
             console.warn("HERE 13");
             socket.emit("get_user_data", email, data => {
                 console.warn(data, data.rooms);
-                const sameRoom = data.rooms.some(room => room.roomId === roomIdAccount);
+                const sameRoom = data.rooms && data.rooms.some(room => room.roomId === roomIdAccount);
                 
-                if (sameRoom) {
+                if (sameRoom === true) {
                     errors += "You are already in the room!.";
                     const errs = errors.split(".");
                     setErrors(errs);
@@ -82,25 +82,35 @@ export default function JoinRoom({ route, navigation }) {
 
                 socket.emit("join_room", roomIdAccount, 0, id, email, username, fullName);
 
-                socket.emit("get_room_data", roomIdAccount, async rows => {
+                socket.emit("get_room_data", roomIdAccount, rows => {
                     const dbGeolocation = rows[0]["geolocation"];
-                    const newRooms = await AsyncStorage.getItem("rooms") ? JSON.parse(await AsyncStorage.getItem("rooms")) : [];
-                    socket.emit("room_dbId", roomIdAccount, username, async foundId => {
+                    
+                    socket.emit("room_dbId", roomIdAccount, username, foundId => {
                         if (!foundId) return;
-                        newRooms.push({
-                            roomId: roomIdAccount,
-                            roomName: roomName,
-                            admin: false,
-                            userStatus: 0,
-                            geolocation: dbGeolocation,
-                            username: rows[0]["username"],
-                            name: rows[0]["name"],
-                            id: foundId
+                        socket.emit("get_subrooms", roomIdAccount, rows[0]["username"], async subRooms => {
+                            try {
+                                const newRooms = await AsyncStorage.getItem("rooms") ? JSON.parse(await AsyncStorage.getItem("rooms")) : [];
+                                if (!newRooms) newRooms = [];
+                                console.warn("ROOMS: ", newRooms);
+                                newRooms.push({
+                                    roomId: roomIdAccount,
+                                    roomName: roomName,
+                                    admin: false,
+                                    userStatus: 0,
+                                    geolocation: dbGeolocation,
+                                    username: rows[0]["username"],
+                                    name: rows[0]["name"],
+                                    id: foundId,
+                                    subRooms: subRooms
+                                });
+        
+                                await AsyncStorage.setItem("rooms", JSON.stringify(newRooms));
+                                socket.emit("update_rooms", email, JSON.stringify(newRooms));
+                                setTimeout(() => navigation.navigate("Rooms", {rooms: newRooms}), 500);
+                            } catch(e) {
+                                console.error(e);
+                            }
                         });
-    
-                        await AsyncStorage.setItem("rooms", JSON.stringify(newRooms));
-                        socket.emit("update_rooms", email, JSON.stringify(newRooms));
-                        setTimeout(() => navigation.navigate("Rooms", {rooms: newRooms}), 500);
                     });
                 });
                 

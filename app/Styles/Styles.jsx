@@ -2,7 +2,8 @@ import { Dimensions, StyleSheet, Platform } from "react-native";
 
 const styles = StyleSheet.create({
 
-    container: {
+
+    bigContainer: {
         width: "100%",
         flex: 1,
         position: "relative",
@@ -10,7 +11,31 @@ const styles = StyleSheet.create({
         backgroundColor: '#0D1D2B',
         borderWidth: 2,
         borderColor: "royalblue",
-        borderRadius: Platform.OS === "ios" ? 48 : 0
+        borderRadius: Platform.OS === "ios" ? 48 : 0,
+    },
+
+    container: {
+        width: "100%",
+        flex: 1,
+        position: "relative",
+        maxHeight: Dimensions.get("window").height - 100,
+    },
+
+    titleContent: {
+        width: "100%",
+        position: "absolute",
+        top: 50,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center"
+    },
+    
+    title: {
+        fontSize: 35,
+        color: "#fff",
+        fontWeight: "bold",
+        textAlign: "center",
+        
     },
 
     pageContainer: {
@@ -21,7 +46,7 @@ const styles = StyleSheet.create({
     addButton: {
         flex: 1,
         position: 'absolute',
-        bottom: "10%",
+        bottom: "3%",
         right: 15,
         justifyContent: "center",
         alignItems: "center",
@@ -55,7 +80,7 @@ const styles = StyleSheet.create({
     room: {
         width: "100%",
         height: "100%",
-        maxHeight: 200,
+        maxHeight: 140,
         marginVertical: 20,
         backgroundColor: "#fff",
         flex: 1,
@@ -80,10 +105,7 @@ const styles = StyleSheet.create({
     },
 
     roomIcon: {
-        position: "absolute",
-        bottom: 10,
-        right: 5,
-        fontSize: 40,
+        
         color: "rgba(255, 255, 255, .85)",
     },
 
@@ -96,6 +118,8 @@ const styles = StyleSheet.create({
     },
 
     accountContainer: {
+        zIndex: 3,
+        elevation: 3,
         position: "absolute",
         right: 10,
         top: Platform.OS === "ios" ? 40 : 20,
@@ -104,6 +128,23 @@ const styles = StyleSheet.create({
         borderColor: "royalblue",
         padding: 10
     },
+
+    statusIcon: {
+        position: "absolute",
+        top: 5,
+        right: 5,
+        
+    },
+
+    subroomIcon: {
+        position: "absolute",
+        bottom: 5,
+        right: 5,
+        padding: 7.5,
+        backgroundColor: "#fff",
+        borderRadius: 35
+
+    }
 });
 
 export default styles;

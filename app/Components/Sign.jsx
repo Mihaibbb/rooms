@@ -79,14 +79,7 @@ export default function Sign({ route, navigation }) {
             if (errors.length > 0) return;
 
             socket.emit("register", fullName, username, email, password, async (foundDbId) => {
-                const room = {
-                    username: username,
-                    id: id,
-                    email: email,
-                    name: fullName,
-                    logged: true
-                };
-
+    
                 username && await AsyncStorage.setItem("username", JSON.stringify(username));
                 fullName && await AsyncStorage.setItem("name", JSON.stringify(fullName));
                 await AsyncStorage.setItem("logged", JSON.stringify(true));
@@ -182,6 +175,7 @@ export default function Sign({ route, navigation }) {
                                 value={username}
                                 placeholder="Username..."
                                 keyboardAppearance="dark"
+                                secureTextEntry={false}
                                 placeholderTextColor="rgba(255, 255, 255, .6)"
                             />
         

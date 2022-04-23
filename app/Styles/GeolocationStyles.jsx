@@ -3,13 +3,28 @@ import { StyleSheet, Platform } from "react-native";
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0D1D2B',
+        backgroundColor: '#000',
         position: 'relative',
         alignItems: 'center',
-        justifyContent: 'center',
         borderWidth: 2,
         borderColor: "royalblue",
-        borderRadius: Platform.OS === "ios" ? 48 : 0
+        borderRadius: Platform.OS === "ios" ? 48 : 0,
+        paddingTop: Platform.OS === "ios" ? 55 : 0,
+    },
+
+    content: {
+        width: "100%",
+        height: "100%",
+        alignItems: "center",
+        justifyContent: "center",
+        flex: 1
+    },
+
+
+    title: {
+        fontSize: 32,
+        fontWeight: "bold",
+        color: "#fff",
     },
 
     buttonContainer: {

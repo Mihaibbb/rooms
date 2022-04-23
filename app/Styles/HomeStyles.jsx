@@ -48,6 +48,7 @@ const styles = StyleSheet.create({
       color: "#fff"
     },
 
+
     clearButton: {
       position: 'absolute',
       bottom: 45,
