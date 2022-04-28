@@ -1,8 +1,9 @@
 import React, {useState, useEffect} from "react";
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager'; 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export default function UserGeolocation({ roomId, socket, id }) {
+export default function UserGeolocation({socket, id, rooms, email, username, statusCallback, subStatusCallback }) {
 
     const [location, setLocation] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
@@ -11,42 +12,40 @@ export default function UserGeolocation({ roomId, socket, id }) {
     const [longitude, setLongitude] = useState(null);
     const [start, setStart] = useState(false);
     const [userInRoom, setUserInRoom] = useState(null);
+    const [foundRooms, setRooms] = useState(rooms);
 
-    const [minLat, setMinLat] = useState(null);
-    const [minLong, setMinLong] = useState(null);
-    const [maxLat, setMaxLat] = useState(null);
-    const [maxLong, setMaxLong] = useState(null);
 
     useEffect(() => {
-        if (!roomId) return;
-        console.warn("Boys", roomId, id);
-        socket.emit("server_geolocation", roomId);
-        socket.on("get_coords", bruteCoords => {
-            const coords = bruteCoords.split(" ");
-            setMinLat(coords[0]);
-            setMaxLat(coords[1]);
-            setMinLong(coords[2]);
-            setMaxLong(coords[3]);
-            setStart(true);
-            console.warn("Data: ", bruteCoords);
-        });
-    }, [roomId]);
+        console.log("Boys", id);
+        // socket.emit("server_geolocation", roomId);
+        // socket.on("get_coords", bruteCoords => {
+        //     const coords = bruteCoords.split(" ");
+        //     setMinLat(coords[0]);
+        //     setMaxLat(coords[1]);
+        //     setMinLong(coords[2]);
+        //     setMaxLong(coords[3]);
+        //     setStart(true);
+        //     console.warn("Data: ", bruteCoords);
+        // });
+    }, []);
+
 
     TaskManager.defineTask('trackLocation', ({ data: { locations }, error }) => {
         if (error) return;   
-        console.warn('Received new locations', locations);
+        console.log('Received new locations', locations);
     });
 
     useEffect(() => {
         (async () => {
             if (location) return;
-            let { status } = await Location.requestForegroundPermissionsAsync();
+            const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
                 setErrorMsg('Permission to access location was denied');
                 return;
             }
             
-            let newLocation = await Location.getCurrentPositionAsync({});
+            const newLocation = await Location.getCurrentPositionAsync({});
+            setStart(true);
             setLocation(newLocation);
             setLongitude(newLocation.coords.longitude.toFixed(4));
             setLatitude(newLocation.coords.latitude.toFixed(4));
@@ -55,24 +54,60 @@ export default function UserGeolocation({ roomId, socket, id }) {
         })();
     }, []);
 
-    useEffect(() => {
-        if (userInRoom === null) return;
-        console.warn("In room: ", userInRoom, id);
-        socket.emit("change_status", roomId, userInRoom, id);
-    }, [userInRoom]);
-
-    useEffect(() => {
-        console.warn("Before start", latitude, longitude);
+    useEffect(async () => {
+        console.log("Before start", latitude, longitude);
         if (!start) return;
-        console.warn("New data", latitude, longitude);
-        (async () => {
-            setUserInRoom(await inRoom());
-        })();
+        console.log("New data", latitude, longitude);
+
+        socket.emit("get_rooms", email, async rooms => {
+            const newRooms = rooms;
+            const roomsStatus = [], subRoomsStatus = [];
+            newRooms && newRooms.forEach((currRoom, idx) => {
+
+                subRoomsStatus.push([]);
+                currRoom.subRooms && currRoom.subRooms.forEach((subRoom, subRoomIdx) => {
+                    const subGeolocationData = subRoom["geolocation"].split(" ");
+                    const subMinLat = parseFloat(subGeolocationData[0]).toFixed(4);
+                    const subMaxLat = parseFloat(subGeolocationData[1]).toFixed(4);
+                    const subMinLong = parseFloat(subGeolocationData[2]).toFixed(4);
+                    const subMaxLong = parseFloat(subGeolocationData[3]).toFixed(4);
+                    const subOldStatus = newRooms[idx].subRooms[subRoomIdx]["userStatus"];
+                    console.warn(subOldStatus);
+                    newRooms[idx].subRooms[subRoomIdx]["userStatus"] = longitude >= subMinLong && longitude <= subMaxLong && latitude >= subMinLat && latitude <= subMaxLat;
+                    //subOldStatus !== newRooms[idx].subRooms[subRoomIdx]["userStatus"] && socket.emit("change_status", currRoom["roomId"], currRoom["userStatus"], currRoom["id"]);
+                    if (subOldStatus !== newRooms[idx].subRooms[subRoomIdx]["userStatus"]) {
+                        socket.emit("send_notification", currRoom["username"], `${currRoom["roomName"]} room`, newRooms[idx]["userStatus"] ? `${currRoom["username"]} entered into the subroom ${subRoom["roomName"]}!` : `${currRoom["username"]} is no longer into the subroom ${subRoom["roomName"]}!`);
+                    }
+                    subRoomsStatus[idx].push(newRooms[idx].subRooms[subRoomIdx]["userStatus"]);
+                });
+
+                const geolocationData = currRoom["geolocation"].split(" ");
+                const minLat = parseFloat(geolocationData[0]);
+                const maxLat = parseFloat(geolocationData[1]);
+                const minLong = parseFloat(geolocationData[2]);
+                const maxLong = parseFloat(geolocationData[3]);
+                const oldStatus = newRooms[idx]["userStatus"];
+                newRooms[idx]["userStatus"] = longitude >= minLong && longitude <= maxLong && latitude >= minLat && latitude <= maxLat;
+                oldStatus !== newRooms[idx]["userStatus"] && socket.emit("change_status", currRoom["roomId"], currRoom["userStatus"], currRoom["id"]);
+
+                if (oldStatus !== newRooms[idx]["userStatus"] && !currRoom.admin) {
+                    socket.emit("send_notification", currRoom["username"], `${currRoom["roomName"]} room`, newRooms[idx]["userStatus"] ? `${username} entered in the room!` : `${username} is no longer in the room!`);
+                }
+
+                setRooms(newRooms);
+                console.warn("Status", idx, newRooms[idx]["userStatus"]);
+                roomsStatus.push(newRooms[idx]["userStatus"]);
+                socket.emit("update_rooms", email, JSON.stringify(newRooms));
+            });
+            statusCallback(roomsStatus);
+            subStatusCallback(subRoomsStatus);
+            setRooms(newRooms);
+            await AsyncStorage.setItem("rooms", JSON.stringify(newRooms));
+        });
+    
     }, [latitude, longitude]);
 
-    const inRoom = async () => {
-        return longitude >= minLong && longitude <= maxLong && latitude >= minLat && latitude <= maxLat;
-    };  
+
 
     const watchPosition = async () => {
 
@@ -83,7 +118,7 @@ export default function UserGeolocation({ roomId, socket, id }) {
         }; 
 
         await Location.watchPositionAsync(options, loc => {  
-            console.warn("New location: ", loc);
+            console.log("New location here: ", loc);
             setLongitude(loc.coords.longitude.toFixed(4));
             setLatitude(loc.coords.latitude.toFixed(4));
         });  

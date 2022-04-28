@@ -3,13 +3,40 @@ import { StyleSheet, Platform } from 'react-native';
 const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#0D1D2B',
+      backgroundColor: '#000',
       position: 'relative',
       alignItems: 'center',
       justifyContent: 'center',
       borderWidth: 2,
-        borderColor: "royalblue",
-        borderRadius: Platform.OS === "ios" ? 48 : 0
+      borderColor: "royalblue",
+      borderRadius: Platform.OS === "ios" ? 48 : 0,
+      padding: 20
+    },
+
+    choiceContainer: {
+      height: "45%",
+      width: "100%",
+      marginVertical: 20,
+      borderRadius: 20,
+      flex: 1,    
+      justifyContent: 'center',
+      alignItems: 'center'
+    },
+
+    bigText: {
+        fontSize: 40,
+        color: "#fff",
+        textShadowColor: 'royalblue',
+        textShadowOffset: {width: -2, height: 2},
+        textShadowRadius: 15
+    },
+
+    button: {
+        width: "100%",
+        height: "100%",
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center'
     },
 
     buttonContainer: {
@@ -47,6 +74,7 @@ const styles = StyleSheet.create({
       fontSize: 20,
       color: "#fff"
     },
+
 
     clearButton: {
       position: 'absolute',

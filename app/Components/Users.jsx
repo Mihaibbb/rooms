@@ -9,68 +9,66 @@ import styles from "../Styles/UsersStyles";
 
 export default function Users({route, navigation}) {
 
-    const {id, socket} = route.params;
+    const {id, socket, roomId, roomName, email, username} = route.params;
 
-    // whsded
-
-    const [roomId, setRoomId] = useState(null);
     const [rows, setRows] = useState([]);
 
-    useEffect(async () => {
-        const room = await AsyncStorage.getItem("roomId");
-        console.warn("room detect", room)
-        setRoomId(room);
-    }, []);
-
     useEffect(() => {
-        console.warn("Rows", rows);
+        console.log("Rows", rows);
         if (!roomId) return;
         socket.emit("all_users", roomId, id);
 
         socket.on("get_rows", currRows => {
-            console.warn("My rows", currRows);
+            console.log("My rows", currRows);
             setRows(currRows);
-
         });
+
+        socket.on("update_rooms_sockets", currRows => {
+            console.warn("my rows", currRows);
+            setRows(currRows);
+        });
+
+        socket.on("change_users", currRows => {
+            console.log("rows modified")
+            setRows(currRows);
+        });
+
     }, [roomId]);
-
-
-    socket.on("change_users", currRows => {
-        // console.warn("salut")
-        setRows(currRows);
-    });
    
 
     return (
-        <ScrollView>
-            <View style={styles.container}>
+        <View style={styles.scrollContainer}>
+            <ScrollView style={styles.container}>
             <View style={styles.title}>
-                <Text style={styles.titleText}>Room's name:
+                <Text style={styles.titleText}>
+                    {roomName}'s Users
+                </Text>
+                <Text style={styles.textId}>Room's ID:
                     <Text style={styles.bold}> {roomId}</Text>
                 </Text> 
             </View>
-            {rows.map((row, rowIdx) => { return (
+            {rows && rows.map((row, rowIdx) => { return (
                 <View style={styles.element} key={rowIdx}>
-                    <Text style={styles.text}>{row["username"]}</Text>
+                    <Text style={styles.text}>{`${row["username"]} ${row["email"] === email ? "(You)" : ""}`}</Text>
                     { row["user_status"] ? (
                         <FontAwesomeIcon 
                             icon={faCheck}
-                            color="green"
+                            color="royalblue"
                             size={40}
                         />
                     ) : (
                         <FontAwesomeIcon 
                         icon={faTimes}
-                        color="#DC143C"
+                        color="royalblue"
                         size={40}
                     />
                     )}
                 </View>
             )})}
-            </View>
+            </ScrollView>
 
-            <UserGeolocation roomId={roomId} socket={socket} id={1}/>
-        </ScrollView>
+            <UserGeolocation roomId={roomId} socket={socket} id={1} email={email} username={username}/>
+        </View>
         
     );
 }

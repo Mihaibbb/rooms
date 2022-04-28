@@ -5,14 +5,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import styles from "../Styles/CreateStyles";
 
 export default function CreateRoom({ route, navigation }) {
-    console.warn("hello");
-    const { id, socket } = route.params;
-    console.warn(id);
+    const {socket, id, email, username, fullName} = route.params;
+
+    console.log(id);
 
     const [roomName, changeRoomName] = useState(null);
-    const [adminName, setAdminName] = useState(null);
-    const [email, setEmail] = useState(null);
-    const [password, setPassword] = useState(null);
 
     const [isKBVisible, setKBVisible] = useState(false);
     const [roomId, setRoomId] = useState(null);
@@ -22,14 +19,14 @@ export default function CreateRoom({ route, navigation }) {
             const keys = await AsyncStorage.getAllKeys();
             keys.forEach(async key => {
                 const element = await AsyncStorage.getItem(key);
-                console.warn(element);
+                console.log(key, element);
             });
         } catch(e) {
-            console.warn("error 1", e);
+            console.log("error 1", e);
         }    
        
     }, []);
-    // console.warn(socket);
+    // console.log(socket);
 
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => setKBVisible(true));
@@ -41,50 +38,51 @@ export default function CreateRoom({ route, navigation }) {
     }, []);
 
     const _storeData = async (key, value) => {
-        console.warn('work', value);
+        console.log('work', value);
         try {
             const keys = Object.keys(value);
             keys.forEach(async (keyName) => {
                 await AsyncStorage.setItem(keyName, value[keyName]);
             });
         } catch (e) {
-            console.warn("Error from here", e);
+            console.log("Error from here", e);
         };
 
         try {
             const item = await AsyncStorage.getItem(key);
             console.log("Item", item);
         } catch(e) {
-            console.warn("error", e);
+            console.log("error", e);
         }
 
     };
 
     useEffect(() => {
-        const newRoomId = Math.random().toString(36).substring(2, 8);
+        let newRoomId = Math.random().toString(36).substring(2, 8);
+        while (roomExists(newRoomId)) {
+            newRoomId = Math.random().toString(36).substring(2, 8);
+        }
         setRoomId(newRoomId);
     }, []);
 
+    const roomExists = (id) => {
+        socket.emit("room_exists", id, res => {
+            if (!res) return false;
+            return true;
+        });
+    };
+
     const submitCreate = async () => {
-        if (roomName.length < 4 || adminName.length < 3) return;
-        
-        console.warn(roomName, adminName);
-        const room = {
-            roomId: roomId, 
-            roomName: roomName,
-            admin: adminName,
-            id: id
-        };
-        
-        await _storeData("room", room);
-        
-        navigation.navigate('Geolocation', {...route.params, roomId, roomName, adminName, email, password});
+        if (roomName.length < 4) return;
+        console.log("email", email);
+        if (!email) return;
+        navigation.navigate('Geolocation', {...route.params, roomId, roomName, username, fullName});
     };
     
     return roomId && (
         <TouchableWithoutFeedback onPress={() => isKBVisible ? Keyboard.dismiss() : null}>
             <View style={styles.container}>
-
+                
 
                 <Text style={styles.normText}>Your new room id is: 
                     <Text style={styles.idText}> {roomId}</Text>
@@ -99,33 +97,6 @@ export default function CreateRoom({ route, navigation }) {
                     placeholderTextColor="rgba(255, 255, 255, .6)"
                 />
 
-                <TextInput
-                    style={styles.input}
-                    onChangeText={setAdminName}
-                    value={adminName}
-                    placeholder="Your full name..."
-                    keyboardAppearance="dark"
-                    placeholderTextColor="rgba(255, 255, 255, .6)"
-                />
-
-                <TextInput
-                    style={styles.input}
-                    onChangeText={setEmail}
-                    value={email}
-                    placeholder="Your email...."
-                    keyboardAppearance="dark"
-                    placeholderTextColor="rgba(255, 255, 255, .6)"
-                />
-
-                <TextInput
-                    style={styles.input}
-                    onChangeText={setPassword}
-                    value={password}
-                    placeholder="Your password...."
-                    keyboardAppearance="dark"
-                    secureTextEntry={true}
-                    placeholderTextColor="rgba(255, 255, 255, .6)"
-                />
 
                 <View style={styles.idContainer}>
                     <Text style={(styles.bottomText, styles.whiteText)}>Your id is: 
