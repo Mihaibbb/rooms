@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect } from "react";
 import { TouchableOpacity, Text, View } from "react-native";
+import {LinearGradient} from "expo-linear-gradient";
 
 import styles from "../Styles/HomeStyles";
 
@@ -19,21 +20,17 @@ export default function AddRoom({ navigation, route }) {
 
     return (
         <View style={styles.container}>
-            <TouchableOpacity
-                style={styles.buttonContainer}
-                underlayColor="rgb(255, 255, 255)"
-                onPress={() => createRoom()}
-            >
-                <Text style={styles.text}>Create new room</Text>
-                
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={styles.buttonContainer}
-                underlayColor="rgb(255, 255, 255)"
-                onPress={() => joinRoom()}
-            >
-                <Text style={styles.text}>Join a room</Text>
-            </TouchableOpacity>
+             <LinearGradient colors={["royalblue", "#000"]} style={styles.choiceContainer}>
+                <TouchableOpacity style={styles.button} onPress={() => createRoom()}>
+                    <Text style={styles.bigText}>Create room</Text>
+                </TouchableOpacity>
+            </LinearGradient>
+
+            <LinearGradient colors={["#000", "royalblue"]} style={styles.choiceContainer}>
+                <TouchableOpacity style={styles.button} onPress={() => joinRoom()}>
+                    <Text style={styles.bigText}>Join room</Text>
+                </TouchableOpacity>
+            </LinearGradient>
         </View>
     );
 }

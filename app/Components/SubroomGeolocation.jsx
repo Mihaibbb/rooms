@@ -7,7 +7,7 @@ import styles from "../Styles/GeolocationStyles";
 
 export default function Home({ route, navigation }) {
 
-    const {socket, id, email, roomId, roomName, subroomId, subroomName} = route.params;
+    const {socket, id, email, roomId, roomName, subroomId, subroomName, roomGeolocation} = route.params;
 
     const [location, setLocation] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
@@ -15,6 +15,7 @@ export default function Home({ route, navigation }) {
     const [latitude, setLatitude] = useState(null);
     const [longitude, setLongitude] = useState(null);
     const [corners, setCorners] = useState([]);
+    const [error, setError] = useState(false);
 
     const [minLat, setMinLat] = useState(null);
     const [minLong, setMinLong] = useState(null);
@@ -28,6 +29,10 @@ export default function Home({ route, navigation }) {
         if (error) return;   
         console.warn('Received new locations', locations);
     });
+
+    const checkInRoom = (geolocationData) => {
+        return geolocationData[0] >= roomGeolocation[0] && geolocationData[1] <= roomGeolocation[1] && geolocationData[2] >= roomGeolocation[2] && geolocationData[3] <= roomGeolocation[3];
+    };
 
     useEffect(() => {
         (async () => {
@@ -85,6 +90,7 @@ export default function Home({ route, navigation }) {
         }];
 
         setCorners(newCorners);
+        setError(false);
 
         if (newCorners.length === 4) getRoomCoordinates();
     };
@@ -103,31 +109,42 @@ export default function Home({ route, navigation }) {
         setMaxLat(newMaxLat);
         setMinLong(newMinLong);
         setMaxLong(newMaxLong);
-        setStart(true);
+        
 
         const geolocationData = `${newMinLat} ${newMaxLat} ${newMinLong} ${newMaxLong}`;
+        if (!checkInRoom(geolocationData.split(" "))) {
+            setCorners([]);
+            setError(true);
+            return;
+        }
+        
+        setStart(true);
         console.warn("This is the email: ", email);
         console.warn("This is the socket id: ", id);
         console.warn("HERE");
         socket.emit("get_rooms", email, async rooms => {
-            const newRooms = rooms || [];
-          
-            let foundIdx;
-            newRooms.forEach((room, idx) => room.roomId === roomId ? foundIdx = idx : null);
-            newRooms[foundIdx].subRooms.push({
-                roomId: roomId,
-                roomName: roomName,
-                userStatus: !inRoom ? 0 : inRoom,
-                geolocation: geolocationData,
-            });
-
             try {
+                const newRooms = rooms || [];
+                if (newRooms.length === 0) return;
+
+                let foundIdx;
+                newRooms.forEach((room, idx) => room.roomId === roomId ? foundIdx = idx : null);
+
+                if (!newRooms[foundIdx].subRooms) newRooms[foundIdx].subRooms = [];
+
+                newRooms[foundIdx].subRooms.push({
+                    roomId: subroomId,
+                    roomName: subroomName,
+                    userStatus: !inRoom ? 0 : inRoom,
+                    geolocation: geolocationData,
+                });
+
                 await AsyncStorage.setItem("rooms", JSON.stringify(newRooms));
+                socket.emit("update_rooms", email, JSON.stringify(newRooms));
+                setTimeout(() => navigation.navigate("Rooms"), 750);
             } catch(e) {
                 console.error(e);
             }
-            socket.emit("update_rooms", email, JSON.stringify(newRooms));
-            setTimeout(() => navigation.navigate("Rooms"), 750);
         });        
     };
 
@@ -158,8 +175,8 @@ export default function Home({ route, navigation }) {
                     </TouchableOpacity>
                 }  
                 <View style={styles.results}>    
-                    
-                    <Text style={styles.corners}>{inRoom ? "You are in the room!" : start ? "You are not in the room!" : ""}</Text>
+                    {error && <Text style={styles.corners}>The subroom is not into the room!</Text>}
+                    {/* <Text style={styles.corners}>{inRoom ? "You are in the room!" : start ? "You are not in the room!" : ""}</Text> */}
                 </View>
             </View>
         </View>

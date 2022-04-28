@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
         height: 60,
         backgroundColor: "#fff",
         borderRadius: 60,
-
+        
         shadowColor: "rgb(0, 164, 239)",
         shadowOffset: {width: 0, height: 5},
         shadowOpacity: 0.3,
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     room: {
         width: "100%",
         height: "100%",
-        maxHeight: 140,
+        minHeight: 140,
         marginVertical: 20,
         backgroundColor: "#fff",
         flex: 1,
@@ -90,7 +90,8 @@ const styles = StyleSheet.create({
         shadowRadius: 3,
         borderRadius: 16,
         padding: 10,
-        backgroundColor: "royalblue"
+        backgroundColor: "royalblue",
+        position: "relative"
     },
 
     roomTitle: {
@@ -115,6 +116,17 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 10,
         left: 10
+    },
+
+    roomMenu: {
+        position: "absolute",
+        zIndex: 105,
+        top: "100%",
+        width: "100%",
+        height: "auto",
+        padding: 10,
+        backgroundColor: "#222",
+        display: "none"
     },
 
     accountContainer: {
@@ -144,6 +156,49 @@ const styles = StyleSheet.create({
         backgroundColor: "#fff",
         borderRadius: 35
 
+    },
+
+    subRoomsContainer: {
+        width: "100%",
+        backgroundColor: "#111",
+        flex: 1,
+        padding: 20,
+        paddingTop: 0,
+        borderRadius: 20,
+        marginLeft: 5
+    },
+    
+    subRoom: {
+        borderBottomWidth: 2,
+        flex: 1,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: 15,
+        paddingBottom: 10
+    },
+
+    subRoomText: {
+        fontSize: 20,
+        color: "#fff",
+        marginLeft: 10,
+        
+    },
+
+    subRoomsTitle: {
+        textAlign: "center",
+        color: "#fff",
+        fontSize: 23,
+        marginTop: 10,
+        fontWeight: "bold"
+    },
+
+    subRoomAdd: {
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 15,
+        paddingBottom: 10
     }
 });
 

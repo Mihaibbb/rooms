@@ -6,7 +6,7 @@ import styles from "../Styles/Subroom";
 
 export default function Subroom({route, navigation}) {
 
-    const {socket, id, email, roomId, roomName} = route.params;
+    const {socket, id, email, roomId, roomName, roomGeolocation} = route.params;
 
     const [roomNameInput, setRoomNameInput] = useState();
     const [subroomId, setSubRoomId] = useState(false);
@@ -25,6 +25,7 @@ export default function Subroom({route, navigation}) {
             keyboardDidHideListener.remove();
         };
     }, []);
+    //[{"id": 1, "name": "Mihai", "admin": true, "roomId": "v58ft3", "roomName": "Kekek", "subRooms": [{"roomId": "mgn6j6is", "roomName": "Mmm mm", "userStatus": 0, "geolocation": "44.2054 44.2054 27.3094 27.3094"}, {"roomId": "nt03kvje", "roomName": "Nume", "userStatus": 0, "geolocation": "44.2055 44.2055 27.3094 27.3094"}], "username": "mihai_b", "userStatus": false, "geolocation": "44.2055 44.2055 27.3093 27.3093"}, {"id": 1, "name": "Mihai", "admin": true, "roomId": "vlf8hh", "roomName": "Camera", "username": "mihai_b", "userStatus": true, "geolocation": "44.2054 44.2054 27.3093 27.3093"}, {"id": 1, "name": "Mihai", "admin": true, "roomId": "3fpk06", "roomName": "Abcdef", "username": "mihai_b", "userStatus": false, "geolocation": "44.2055 44.2055 27.3093 27.3093"}, {"id": 1, "name": "Mihai", "admin": true, "roomId": "h9kwv3", "roomName": "Blab", "username": "mihai_b", "userStatus": true, "geolocation": "44.2054 44.2054 27.3092 27.3093"}, {"id": 1, "name": "Mihai", "admin": true, "roomId": "dqcw7t", "roomName": "Gradina", "subRooms": [], "username": "mihai_b", "userStatus": false, "geolocation": "44.1975 44.1977 27.3122 27.3123"}]
 
     useEffect(() => {
         const newRoomId = Math.random().toString(36).substring(2, 10);

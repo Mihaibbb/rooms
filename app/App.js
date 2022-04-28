@@ -1,4 +1,5 @@
-import { LogBox } from 'react-native';
+import {useState, useRef, useEffect} from "react";
+import { Dimensions, LogBox, View, Image, Animated } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Home from './Components/Home';
@@ -19,6 +20,23 @@ export default function App() {
   LogBox.ignoreLogs([
     'Non-serializable values were found in the navigation state',
   ]);
+
+  const [start, setStart] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {toValue: 1, duration: 2000, useNativeDriver: true}).start();
+  }, [fadeAnim]);
+
+  setTimeout(() => setStart(true), 2000);
+
+  if (!start && fadeAnim) return (
+    <View style={{width: "100%", minHeight: Dimensions.get("window").height, backgroundColor: "#000", flex: 1, justifyContent: "center"}}>
+      <Animated.View style={{opacity: fadeAnim}}>
+        <Image source={require("./assets/logo.png")} resizeMode="contain" style={{width: "100%"}}/>
+      </Animated.View>
+    </View>
+  );
 
   return (
     <NavigationContainer>

@@ -2,10 +2,8 @@ import { Platform } from "expo-modules-core";
 import React, { useState, useEffect } from "react";
 import { View, Button, Text, TextInput, Keyboard, TouchableWithoutFeedback, TouchableOpacity, TouchableHighlight } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// import { Socket } from "socket.io-client";
+import * as Google from "expo-google-app-auth";
 import styles from "../Styles/CreateStyles";
-
-const ROOM_LENGTH = 6;
 
 export default function Sign({ route, navigation }) {
 
@@ -230,6 +228,7 @@ export default function Sign({ route, navigation }) {
                                 secureTextEntry={true}
                                 placeholderTextColor="rgba(255, 255, 255, .6)"
                             />
+
                         </View>
                     )}
 
@@ -260,6 +259,7 @@ export default function Sign({ route, navigation }) {
                             </View>
                         ) : null
                     }
+
                     <View style={styles.errorsContainer}>
                         {myErrs.map((err, idx) => (
                             <Text style={styles.error} key={idx}>{err}</Text>

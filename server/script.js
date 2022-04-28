@@ -31,7 +31,6 @@ const leftUsers = (id) => {
     return sockets.filter(socketId => socketId !== id);
 };
 
-app.post("/")
 
 io.on("connection", socket => {
 

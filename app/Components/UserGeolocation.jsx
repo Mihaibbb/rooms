@@ -3,7 +3,7 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager'; 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export default function UserGeolocation({socket, id, rooms, email, statusCallback }) {
+export default function UserGeolocation({socket, id, rooms, email, username, statusCallback, subStatusCallback }) {
 
     const [location, setLocation] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
@@ -61,22 +61,46 @@ export default function UserGeolocation({socket, id, rooms, email, statusCallbac
 
         socket.emit("get_rooms", email, async rooms => {
             const newRooms = rooms;
-            const roomsStatus = [];
+            const roomsStatus = [], subRoomsStatus = [];
             newRooms && newRooms.forEach((currRoom, idx) => {
+
+                subRoomsStatus.push([]);
+                currRoom.subRooms && currRoom.subRooms.forEach((subRoom, subRoomIdx) => {
+                    const subGeolocationData = subRoom["geolocation"].split(" ");
+                    const subMinLat = parseFloat(subGeolocationData[0]).toFixed(4);
+                    const subMaxLat = parseFloat(subGeolocationData[1]).toFixed(4);
+                    const subMinLong = parseFloat(subGeolocationData[2]).toFixed(4);
+                    const subMaxLong = parseFloat(subGeolocationData[3]).toFixed(4);
+                    const subOldStatus = newRooms[idx].subRooms[subRoomIdx]["userStatus"];
+                    console.warn(subOldStatus);
+                    newRooms[idx].subRooms[subRoomIdx]["userStatus"] = longitude >= subMinLong && longitude <= subMaxLong && latitude >= subMinLat && latitude <= subMaxLat;
+                    //subOldStatus !== newRooms[idx].subRooms[subRoomIdx]["userStatus"] && socket.emit("change_status", currRoom["roomId"], currRoom["userStatus"], currRoom["id"]);
+                    if (subOldStatus !== newRooms[idx].subRooms[subRoomIdx]["userStatus"]) {
+                        socket.emit("send_notification", currRoom["username"], `${currRoom["roomName"]} room`, newRooms[idx]["userStatus"] ? `${currRoom["username"]} entered into the subroom ${subRoom["roomName"]}!` : `${currRoom["username"]} is no longer into the subroom ${subRoom["roomName"]}!`);
+                    }
+                    subRoomsStatus[idx].push(newRooms[idx].subRooms[subRoomIdx]["userStatus"]);
+                });
+
                 const geolocationData = currRoom["geolocation"].split(" ");
-                const minLat = parseFloat(geolocationData[0]).toFixed(4);
-                const maxLat = parseFloat(geolocationData[1]).toFixed(4);
-                const minLong = parseFloat(geolocationData[2]).toFixed(4);
-                const maxLong = parseFloat(geolocationData[3]).toFixed(4);
+                const minLat = parseFloat(geolocationData[0]);
+                const maxLat = parseFloat(geolocationData[1]);
+                const minLong = parseFloat(geolocationData[2]);
+                const maxLong = parseFloat(geolocationData[3]);
                 const oldStatus = newRooms[idx]["userStatus"];
                 newRooms[idx]["userStatus"] = longitude >= minLong && longitude <= maxLong && latitude >= minLat && latitude <= maxLat;
                 oldStatus !== newRooms[idx]["userStatus"] && socket.emit("change_status", currRoom["roomId"], currRoom["userStatus"], currRoom["id"]);
+
+                if (oldStatus !== newRooms[idx]["userStatus"] && !currRoom.admin) {
+                    socket.emit("send_notification", currRoom["username"], `${currRoom["roomName"]} room`, newRooms[idx]["userStatus"] ? `${username} entered in the room!` : `${username} is no longer in the room!`);
+                }
+
                 setRooms(newRooms);
                 console.warn("Status", idx, newRooms[idx]["userStatus"]);
                 roomsStatus.push(newRooms[idx]["userStatus"]);
                 socket.emit("update_rooms", email, JSON.stringify(newRooms));
             });
             statusCallback(roomsStatus);
+            subStatusCallback(subRoomsStatus);
             setRooms(newRooms);
             await AsyncStorage.setItem("rooms", JSON.stringify(newRooms));
         });
