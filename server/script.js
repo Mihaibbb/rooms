@@ -1,3 +1,6 @@
+if (process.env.NODE_ENV !== "production") {
+    require("dotenv").config();
+}
 const express = require('express');
 const app = express();
 const server = require('http').Server(app);
@@ -28,6 +31,8 @@ const leftUsers = (id) => {
     return sockets.filter(socketId => socketId !== id);
 };
 
+app.post("/")
+
 io.on("connection", socket => {
 
     let users = 0, sql;
@@ -52,6 +57,7 @@ io.on("connection", socket => {
         if (!rooms) return;
 
         rooms.forEach(room => {
+            socket.join(`room:${room.roomId}`);
             sql = "UPDATE ?? SET socket_id = ? WHERE email = ?";
             database.query(sql, [room.roomId, newId, email], (err, result) => {
                 if (err) throw err;
@@ -134,8 +140,8 @@ io.on("connection", socket => {
                 database.query(newSql, [roomId], (errs, rows, fields) => {
                     if (errs) throw errs;
                     console.log(rows);
-                    socket.join(`room:${roomId}`)
-                    io.to(`room:${roomId}`).emit("change_users", rows);
+                    socket.join(`room:${roomId}`);
+                    socket.to(`room:${roomId}`).emit("change_users", rows);
                 });
             });
 
@@ -266,11 +272,30 @@ io.on("connection", socket => {
     });
 
     socket.on("update_rooms", (email, rooms) => {
+
         sql = "UPDATE ?? SET rooms = ? WHERE email = ?";
         console.log("Rooms: ", rooms);
         database.query(sql, ["users", rooms, email], (err, result) => {
             if (err) throw err;
             console.log("Updated rooms", result);
+            JSON.parse(rooms).forEach(room => {
+                sql = "UPDATE ?? SET user_status = ? WHERE email = ?";
+                database.query(sql, [room.roomId, room.userStatus, email], (errs, result) => {
+                    if (errs) throw err;
+                    console.log(result);
+
+                    sql = "SELECT * FROM ??";
+                    database.query(sql, [room.roomId], (err, newRows) => {
+                        if (err) throw err;
+                        socket.to(newRows["socket_id"]).emit("update_rooms_sockets", newRows);
+
+                    })
+
+
+                });
+            }); 
+
+            
         });
     });
 
@@ -442,6 +467,18 @@ io.on("connection", socket => {
             const rooms = JSON.parse(rows[0]["rooms"]);
             const room = rooms.find(room => room.roomId === roomId);
             callback(room.subRooms);
+        });
+    });
+
+    // Notifications (join / leave room)
+
+    socket.on("send_notification", (adminUsername, title, body) => {
+        sql = "SELECT * FROM ?? WHERE username = ?";
+        database.query(sql, ["users", adminUsername], (err, rows) => {
+            if (err) throw err;
+            if (!rows || rows.length !== 1) return;
+            const adminSocketId = rows[0]["virtual_id"];
+            socket.to(adminSocketId).emit("new_notification", title, body);
         });
     });
 
