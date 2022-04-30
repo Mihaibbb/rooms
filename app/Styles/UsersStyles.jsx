@@ -1,28 +1,15 @@
-import { StyleSheet, Platform, Dimensions } from "react-native";
+import { StyleSheet, Platform } from "react-native";
 
 const styles = StyleSheet.create({
-    scrollContainer: {
-        backgroundColor: '#000',
-        width: "100%",
-        minHeight: Dimensions.get("window").height,
-    },
-
-    titleText: {
-        fontSize: 30,
-        fontWeight: "bold",
-        color: "#fff",
-        textAlign: "center",
-        marginTop: 25
-    },
-
     container: {
         flex: 1,
-        padding: 35,        
-       
+        padding: 50,        
+        backgroundColor: '#0D1D2B',
         borderWidth: 2,
         borderColor: "royalblue",
         borderRadius: Platform.OS === "ios" ? 48 : 0,
-        
+        width: "100%",
+        minHeight: "100%",
     },
 
     element: {
@@ -32,15 +19,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
         width: "100%",
         marginVertical: 15,
-        
+        maxHeight: 37.5,
         color: "#fff",
-        backgroundColor: "rgb(24, 24, 24)",
-        padding: 10,
-        shadowColor: "royalblue",
-        shadowOffset: {width: 2, height: 5},
-        shadowOpacity: .6,
-        shadowRadius: 5,
-        borderRadius: 8
+
     },
 
     text: {
@@ -53,6 +34,11 @@ const styles = StyleSheet.create({
         marginBottom: 20,
      },
 
+    titleText: {
+        fontSize: 22,
+        textAlign: "center",
+        color: "#fff"
+    },
 
     bold: {
         fontWeight: "bold",

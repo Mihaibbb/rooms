@@ -11,14 +11,6 @@ const styles = StyleSheet.create({
         borderColor: "royalblue",
         borderRadius: Platform.OS === "ios" ? 48 : 0
     },
-    
-    inputContainer: {
-        width: "100%",
-        justifyContent: "center",
-        display: "flex",
-        alignItems: "center",
-        
-    },
   
     input: {
         borderWidth: 2,
@@ -26,7 +18,7 @@ const styles = StyleSheet.create({
         borderStyle: "solid",
         borderRadius: 10,
         width: "100%",
-        maxWidth: 275,
+        maxWidth: 250,
         height: 50,
         paddingHorizontal: 5,
         marginVertical: 10,
@@ -42,7 +34,7 @@ const styles = StyleSheet.create({
 
     idContainer: {
         position: "absolute",
-        bottom: 0,
+        top: 40,
         
         backgroundColor: "royalblue",
         paddingHorizontal: 20,
@@ -52,6 +44,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         width: "100%"
     },
+
 
     bottomText: {
         textAlign: 'center',

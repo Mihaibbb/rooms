@@ -3,11 +3,11 @@ import { View, ScrollView, Text, Platform, TouchableOpacity } from "react-native
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager'; 
-import styles from "../Styles/GeolocationStyles";     
+import styles from "../Styles/HomeStyles";     
 
 export default function Home({ route, navigation }) {
 
-    const {socket, id, email, username, fullName, roomId, roomName} = route.params;
+    const {id, socket, roomId, roomName, adminName, email, password} = route.params;
 
     const [location, setLocation] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
@@ -48,18 +48,22 @@ export default function Home({ route, navigation }) {
         })();
     }, []); 
 
-    // useEffect(() => {
-    //     if (inRoom === null) return;
-    //     socket.emit("change_status", roomId, inRoom);
-    // }, [inRoom]); 
+    useEffect(() => {
+        if (inRoom === null) return;
+        socket.emit("change_status", roomId, inRoom);
+    }, [inRoom]); 
 
     useEffect(() => {
         if (!start) return;
+        (async () => {
+            setInRoom(await checkIfYouAreInRoom());
+        })();
     }, [latitude, longitude]);
 
     useEffect(async () => {
         if (!start) return;
 
+        await AsyncStorage.setItem("admin", JSON.stringify(1));
         
     }, [start]);
 
@@ -105,68 +109,39 @@ export default function Home({ route, navigation }) {
         setMaxLong(newMaxLong);
         setStart(true);
 
-        const geolocationData = `${newMinLat} ${newMaxLat} ${newMinLong} ${newMaxLong}`;
-        socket.emit("create_room", roomId, roomName, inRoom === null ? 0 : inRoom, geolocationData, id, email, username, fullName);
-        console.warn("This is the email: ", email);
-        console.warn("This is the socket id: ", id);
-        console.warn("HERE");
-        socket.emit("get_rooms", email, async rooms => {
-            const newRooms = rooms || [];
-            newRooms.push({
-                roomId: roomId,
-                roomName: roomName,
-                name: fullName,
-                username: username,
-                admin: true,
-                userStatus: !inRoom ? 0 : inRoom, 
-                geolocation: geolocationData,
-                id: 1,
-                subRooms: []
-            });
+        socket.emit("create_room", roomId, roomName, adminName, inRoom === null ? 0 : inRoom, `${newMinLat} ${newMaxLat} ${newMinLong} ${newMaxLong}`, id, email, password);
 
-            console.warn("Old rooms: ", rooms);
-            console.warn("new rooms: ", newRooms);
-            try {
-                await AsyncStorage.setItem("rooms", JSON.stringify(newRooms));
-            } catch(e) {
-                console.error(e);
-            }
-
-            socket.emit("update_rooms", email, JSON.stringify(newRooms));
-            setTimeout(() => navigation.navigate("Rooms", { createdRoom: true, rooms: newRooms }), 750);
-        });        
+    
+        setTimeout(() => navigation.navigate("Home", {createdRoom: true}), 750);
+        
     };
 
+    const checkIfYouAreInRoom = async () => {
+        return longitude >= minLong && longitude <= maxLong && latitude >= minLat && latitude <= maxLat;
+    };
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Room Geolocation</Text>
-            <View style={styles.content}>
-                <View style={styles.cornerContainer}>
-                    <Text style={styles.corners}>{!start ? `Corners set: ${corners.length}` : ""}</Text>
-                </View>
-                <View style={styles.coordsContainer}>
-                    {longitude && (
-                        <Text style={styles.coords}>Longitude: {longitude}</Text>
-                    )}
-                    {latitude && (
-                        <Text style={styles.coords}>Latitude: {latitude}</Text>
-                    )}
-                </View>
+            <Text style={styles.corners}>{!start ? `Corners set: ${corners.length}` : ""}</Text>
+            {longitude && (
+                <Text style={styles.coords}>Longitude: {longitude}</Text>
+            )}
+            {latitude && (
+                <Text style={styles.coords}>Latitude: {latitude}</Text>
+            )}
 
-                {longitude && latitude && 
-                    <TouchableOpacity
-                        style={styles.buttonContainer}
-                        underlayColor="rgb(255, 255, 255)"
-                        onPress={() => setNewCorner()}
-                    >
-                        <Text style={styles.buttonText}>Set corners of the room</Text>
-                    </TouchableOpacity>
-                }  
-                <View style={styles.results}>    
-                    
-                    <Text style={styles.corners}>{inRoom ? "You are in the room!" : start ? "You are not in the room!" : ""}</Text>
-                </View>
+            {longitude && latitude && 
+                <TouchableOpacity
+                    style={styles.buttonContainer}
+                    underlayColor="rgb(255, 255, 255)"
+                    onPress={() => setNewCorner()}
+                >
+                    <Text style={styles.buttonText}>Get corners of room</Text>
+                </TouchableOpacity>
+            }  
+            <View style={styles.results}>    
+                
+                <Text style={styles.corners}>{inRoom ? "You are in the room!" : start ? "You are not in the room!" : ""}</Text>
             </View>
         </View>
     );
