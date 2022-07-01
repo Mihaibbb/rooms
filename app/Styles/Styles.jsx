@@ -8,7 +8,7 @@ const styles = StyleSheet.create({
         flex: 1,
         position: "relative",
         minHeight: Dimensions.get("window").height,
-        backgroundColor: '#0D1D2B',
+        backgroundColor: '#000',
         borderWidth: 2,
         borderColor: "royalblue",
         borderRadius: Platform.OS === "ios" ? 48 : 0,
@@ -80,7 +80,8 @@ const styles = StyleSheet.create({
     room: {
         width: "100%",
         height: "100%",
-        minHeight: 140,
+        minHeight: 160,
+        maxHeight: 160,
         marginVertical: 20,
         backgroundColor: "#fff",
         flex: 1,

@@ -15,7 +15,7 @@ const bcrypt = require('bcrypt');
 const database = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'password',
+    password: 'password1',
     database: 'people_tracker',
     port: '3306'
 });
@@ -35,14 +35,11 @@ const leftUsers = (id) => {
 io.on("connection", socket => {
 
     let users = 0, sql;
-
-    socket.on("new_connection", msg => {
-        sockets.push(socket.id);
-        users++;
-        console.log(sockets[users - 1]);
-        console.log("New connection", sockets[users - 1], users);
-        io.to(socket.id).emit("get_id", socket.id);
-    });
+    sockets.push(socket.id);
+    users++;
+    console.log(sockets[users - 1]);
+    console.log("New connection", sockets[users - 1], users);
+    io.to(socket.id).emit("get_id", socket.id);
 
     socket.on("update_id", (newId, email, rooms) => {
         console.log("SOCKET", newId);

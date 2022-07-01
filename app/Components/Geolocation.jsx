@@ -38,40 +38,40 @@ export default function Home({ route, navigation }) {
                 return;
             }
             
-            let newLocation = await Location.getCurrentPositionAsync({});
-            setLocation(newLocation);
-            setLongitude(newLocation.coords.longitude.toFixed(4));
-            setLatitude(newLocation.coords.latitude.toFixed(4));
+            
+            // const interval = setInterval(async () => {
+            //     let newLocation = await Location.getCurrentPositionAsync({});
+            //     setLocation(newLocation);
+            //     setLongitude(newLocation.coords.longitude.toFixed(5));
+            //     setLatitude(newLocation.coords.latitude.toFixed(5));
 
+            // }, 500);
+            
             await watchPosition();
+
+            // return () => {
+            //     clearInterval(interval);
+            // }
            
         })();
     }, []); 
 
-    // useEffect(() => {
-    //     if (inRoom === null) return;
-    //     socket.emit("change_status", roomId, inRoom);
-    // }, [inRoom]); 
 
     useEffect(() => {
-        if (!start) return;
+        console.warn("CHANGE: ", longitude, latitude);
     }, [latitude, longitude]);
 
-    useEffect(async () => {
-        if (!start) return;
-
-        
-    }, [start]);
 
     const watchPosition = async () => {
         await Location.watchPositionAsync({ 
             accuracy: Location.Accuracy.Highest,
-            distanceInterval: 0.0001,
-            deferredUpdatesInterval: 50,
+            distanceInterval: 0.1,
+            //deferredUpdatesInterval: 1500,
             
         }, loc => {  
-            setLongitude(loc.coords.longitude.toFixed(4));
-            setLatitude(loc.coords.latitude.toFixed(4));
+            //console.warn("NEW LOCATION GEOLOCATION: ", loc)
+            setLongitude(loc.coords.longitude.toFixed(5));
+            setLatitude(loc.coords.latitude.toFixed(5));
         });
         
     };

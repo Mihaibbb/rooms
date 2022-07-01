@@ -47,8 +47,8 @@ export default function UserGeolocation({socket, id, rooms, email, username, sta
             const newLocation = await Location.getCurrentPositionAsync({});
             setStart(true);
             setLocation(newLocation);
-            setLongitude(newLocation.coords.longitude.toFixed(4));
-            setLatitude(newLocation.coords.latitude.toFixed(4));
+            setLongitude(newLocation.coords.longitude.toFixed(5));
+            setLatitude(newLocation.coords.latitude.toFixed(5));
 
             await watchPosition();
         })();
@@ -67,10 +67,10 @@ export default function UserGeolocation({socket, id, rooms, email, username, sta
                 subRoomsStatus.push([]);
                 currRoom.subRooms && currRoom.subRooms.forEach((subRoom, subRoomIdx) => {
                     const subGeolocationData = subRoom["geolocation"].split(" ");
-                    const subMinLat = parseFloat(subGeolocationData[0]).toFixed(4);
-                    const subMaxLat = parseFloat(subGeolocationData[1]).toFixed(4);
-                    const subMinLong = parseFloat(subGeolocationData[2]).toFixed(4);
-                    const subMaxLong = parseFloat(subGeolocationData[3]).toFixed(4);
+                    const subMinLat = parseFloat(subGeolocationData[0]).toFixed(5);
+                    const subMaxLat = parseFloat(subGeolocationData[1]).toFixed(5);
+                    const subMinLong = parseFloat(subGeolocationData[2]).toFixed(5);
+                    const subMaxLong = parseFloat(subGeolocationData[3]).toFixed(5);
                     const subOldStatus = newRooms[idx].subRooms[subRoomIdx]["userStatus"];
                     console.warn(subOldStatus);
                     newRooms[idx].subRooms[subRoomIdx]["userStatus"] = longitude >= subMinLong && longitude <= subMaxLong && latitude >= subMinLat && latitude <= subMaxLat;
@@ -113,14 +113,14 @@ export default function UserGeolocation({socket, id, rooms, email, username, sta
 
         const options = { 
             accuracy: Location.Accuracy.Highest,
-            distanceInterval: 0.001,
-            deferredUpdatesInterval: 10,
+            distanceInterval: 0.1,
+            //deferredUpdatesInterval: 10,
         }; 
 
         await Location.watchPositionAsync(options, loc => {  
             console.log("New location here: ", loc);
-            setLongitude(loc.coords.longitude.toFixed(4));
-            setLatitude(loc.coords.latitude.toFixed(4));
+            setLongitude(loc.coords.longitude.toFixed(5));
+            setLatitude(loc.coords.latitude.toFixed(5));
         });  
     };
 

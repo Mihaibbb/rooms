@@ -3,7 +3,7 @@ import { View, ScrollView, TouchableOpacity, Text, Image, Pressable, Modal } fro
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faPlus, faBan, faRecycle, faTrashCan, faUsers, faUser, faCrown, faTimes, faCheck, faHouseChimney, faHouseChimneyUser } from "@fortawesome/free-solid-svg-icons";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { io } from 'socket.io-client'; 
+import { io }  from 'socket.io-client'; 
 import UserGeolocation from "./UserGeolocation";
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 import * as Linking from "expo-linking";
@@ -62,6 +62,7 @@ export default function Home({ route, navigation }) {
     };
 
     useEffect(async () => {
+       
         const url = await Linking.getInitialURL();
         let newUrl = "", startIdx, endIdx;
         
@@ -78,6 +79,9 @@ export default function Home({ route, navigation }) {
         });
 
         let newSocket = io(`http://${newUrl}:3000`);
+        newSocket.on("connect", () => {
+            console.warn("connect../.");
+        })
         newSocket.emit('new_connection', "Connected");
         // console.warn("gg");
         
@@ -87,13 +91,15 @@ export default function Home({ route, navigation }) {
         });
 
         setSocket(newSocket);
-        console.warn("ok");
+        console.warn("ok socket");
         
     }, []);
 
     useEffect(async () => {
         // await deleteStorage();
+        console.warn("h", id, socket);
         if (!socket || !id) return;
+        console.warn("hh");
         try {
 
             const loggedLS = await AsyncStorage.getItem("logged") ? JSON.parse(await AsyncStorage.getItem("logged")) : null;
@@ -186,7 +192,7 @@ export default function Home({ route, navigation }) {
         }, [])
     );
 
-    return start && (
+    return (
         <View style={styles.bigContainer}>
             <Modal transparent={true} visible={disappearFade ? false : true} animationType="fade">
                 <BlurView intensity={isFade !== -1 ? 25 : 0} style={{height: "100%"}}>
