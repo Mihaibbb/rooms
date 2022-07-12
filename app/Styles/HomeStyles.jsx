@@ -9,7 +9,7 @@ const styles = StyleSheet.create({
       justifyContent: 'center',
       borderWidth: 2,
       borderColor: "royalblue",
-      borderRadius: Platform.OS === "ios" ? 48 : 0,
+      borderRadius: Platform.OS === "ios" ? 40 : 0,
       padding: 20
     },
 

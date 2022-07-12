@@ -12,6 +12,7 @@ import { BlurView } from "expo-blur";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 
+
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
         shouldShowAlert: true,
@@ -24,6 +25,8 @@ export default function Home({ route, navigation }) {
     
     const {roomsParam} = route?.params ? route.params : {1: null};
     const isFocused = useIsFocused();
+
+
     
     const deleteStorage = async () => {
         const keys = await AsyncStorage.getAllKeys();
@@ -124,7 +127,7 @@ export default function Home({ route, navigation }) {
 
             await loggedLS && await emailLS && socket.emit("get_rooms", await emailLS, async dbRooms => {
                 const newRooms = dbRooms || [];
-                console.warn("new rooms: ", newRooms);
+                console.log("new rooms: ", newRooms);
                 setRooms(newRooms);
                 await AsyncStorage.setItem("rooms", JSON.stringify(newRooms));
             });

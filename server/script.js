@@ -15,8 +15,7 @@ const bcrypt = require('bcrypt');
 const database = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'password1',
-    database: 'people_tracker',
+    password: 'password',
     port: '3306'
 });
 
@@ -24,6 +23,25 @@ database.connect(err => {
     if (err) throw err;
     console.log('Mysql connected');
 });
+
+database.query("CREATE DATABASE IF NOT EXISTS ??;", ["people_tracker"], (err, result) => {
+    if (err) throw err;
+    console.log(result);
+});
+
+database.query("USE ??", ["people_tracker"], (err, res) => {
+    if (err) throw err;
+    console.log(res);
+});
+
+let sql = "CREATE TABLE IF NOT EXISTS ?? (   `id` int NOT NULL AUTO_INCREMENT,   `name` varchar(256) NOT NULL,   `username` varchar(256) NOT NULL,   `email` varchar(256) NOT NULL,   `password` varchar(256) NOT NULL,   `rooms` json DEFAULT NULL,   `virtual_id` varchar(256) DEFAULT NULL,   PRIMARY KEY (`id`) ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci";
+
+
+database.query(sql, ["users"], (err, res) => {
+    if (err) throw err;
+    console.log("Created", res);
+});
+
 
 let sockets = [];
 
@@ -34,7 +52,7 @@ const leftUsers = (id) => {
 
 io.on("connection", socket => {
 
-    let users = 0, sql;
+    let users = 0;
     sockets.push(socket.id);
     users++;
     console.log(sockets[users - 1]);
@@ -261,7 +279,7 @@ io.on("connection", socket => {
                 database.query(sql, [roomId, 1], (errs, rows) => {
                     if (errs) throw errs;
                     const row = rows[0];
-                    response(row["room_name"]);
+                    response(row);
                 });
             }
         });

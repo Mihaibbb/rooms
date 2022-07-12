@@ -76,7 +76,7 @@ export default function UserGeolocation({socket, id, rooms, email, username, sta
                     newRooms[idx].subRooms[subRoomIdx]["userStatus"] = longitude >= subMinLong && longitude <= subMaxLong && latitude >= subMinLat && latitude <= subMaxLat;
                     //subOldStatus !== newRooms[idx].subRooms[subRoomIdx]["userStatus"] && socket.emit("change_status", currRoom["roomId"], currRoom["userStatus"], currRoom["id"]);
                     if (subOldStatus !== newRooms[idx].subRooms[subRoomIdx]["userStatus"]) {
-                        socket.emit("send_notification", currRoom["username"], `${currRoom["roomName"]} room`, newRooms[idx]["userStatus"] ? `${currRoom["username"]} entered into the subroom ${subRoom["roomName"]}!` : `${currRoom["username"]} is no longer into the subroom ${subRoom["roomName"]}!`);
+                        socket.emit("send_notification", currRoom["username"], `${currRoom["roomName"]}`, newRooms[idx]["userStatus"] ? `${currRoom["username"]} entered into the subroom ${subRoom["roomName"]}!` : `${currRoom["username"]} is no longer into the subroom ${subRoom["roomName"]}!`);
                     }
                     subRoomsStatus[idx].push(newRooms[idx].subRooms[subRoomIdx]["userStatus"]);
                 });
@@ -91,7 +91,7 @@ export default function UserGeolocation({socket, id, rooms, email, username, sta
                 oldStatus !== newRooms[idx]["userStatus"] && socket.emit("change_status", currRoom["roomId"], currRoom["userStatus"], currRoom["id"]);
 
                 if (oldStatus !== newRooms[idx]["userStatus"] && !currRoom.admin) {
-                    socket.emit("send_notification", currRoom["username"], `${currRoom["roomName"]} room`, newRooms[idx]["userStatus"] ? `${username} entered in the room!` : `${username} is no longer in the room!`);
+                    socket.emit("send_notification", currRoom["username"], `${currRoom["roomName"]}`, newRooms[idx]["userStatus"] ? `${username} entered in the room!` : `${username} is no longer in the room!`);
                 }
 
                 setRooms(newRooms);

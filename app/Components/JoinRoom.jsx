@@ -57,7 +57,7 @@ export default function JoinRoom({ route, navigation }) {
         let errors = "";
         if (roomIdAccount.length !== ROOM_LENGTH) errors += "Room doesn't have a valid form.";
 
-        socket.emit("room_exists", roomIdAccount, response => {
+        socket.emit("room_exists", roomIdAccount.toLowerCase(), response => {
             if (!response) errors += "Room doesn't exist.";
  
             if (errors.length > 0) {
@@ -71,7 +71,7 @@ export default function JoinRoom({ route, navigation }) {
             console.warn("HERE 13");
             socket.emit("get_user_data", email, data => {
                 console.warn(data, data.rooms);
-                const sameRoom = data.rooms && data.rooms.some(room => room.roomId === roomIdAccount);
+                const sameRoom = data.rooms && data.rooms.some(room => room.roomId === roomIdAccount.toLowerCase());
                 
                 if (sameRoom === true) {
                     errors += "You are already in the room!.";
@@ -80,20 +80,21 @@ export default function JoinRoom({ route, navigation }) {
                     return;
                 } 
 
-                socket.emit("join_room", roomIdAccount, 0, id, email, username, fullName);
+                socket.emit("join_room", roomIdAccount.toLowerCase(), 0, id, email, username, fullName);
 
-                socket.emit("get_room_data", roomIdAccount, rows => {
+                socket.emit("get_room_data", roomIdAccount.toLowerCase(), rows => {
                     const dbGeolocation = rows[0]["geolocation"];
                     
-                    socket.emit("room_dbId", roomIdAccount, username, foundId => {
+                    socket.emit("room_dbId", roomIdAccount.toLowerCase(), username, foundId => {
                         if (!foundId) return;
-                        socket.emit("get_subrooms", roomIdAccount, rows[0]["username"], async subRooms => {
+                        socket.emit("get_subrooms", roomIdAccount.toLowerCase(), rows[0]["username"], async subRooms => {
                             try {
                                 const newRooms = await AsyncStorage.getItem("rooms") ? JSON.parse(await AsyncStorage.getItem("rooms")) : [];
                                 if (!newRooms) newRooms = [];
+                                
                                 console.warn("ROOMS: ", newRooms);
                                 newRooms.push({
-                                    roomId: roomIdAccount,
+                                    roomId: roomIdAccount.toLowerCase(),
                                     roomName: roomName,
                                     admin: false,
                                     userStatus: 0,
