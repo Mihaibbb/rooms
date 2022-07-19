@@ -19,12 +19,13 @@ const styles = StyleSheet.create({
         flex: 1,
         position: "relative",
         maxHeight: Dimensions.get("window").height - 100,
+        
     },
 
     titleContent: {
         width: "100%",
         position: "absolute",
-        top: 50,
+        top: Platform.OS === "ios" ? 50 : 0 ,
         display: "flex",
         justifyContent: "center",
         alignItems: "center"
@@ -41,6 +42,7 @@ const styles = StyleSheet.create({
     pageContainer: {
         minHeight: "100%",
         position: "relative",
+        marginTop: Platform.OS === "android" ? 20 : 0,
     },
 
     addButton: {
@@ -132,7 +134,7 @@ const styles = StyleSheet.create({
 
     accountContainer: {
         zIndex: 3,
-        elevation: 3,
+        elevation: 0,
         position: "absolute",
         right: 10,
         top: Platform.OS === "ios" ? 40 : 20,

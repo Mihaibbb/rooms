@@ -1,5 +1,5 @@
 import {useState, useRef, useEffect} from "react";
-import { Dimensions, LogBox, View, Image, Animated } from 'react-native';
+import { Dimensions, LogBox, View, Image, Animated, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Home from './Components/Home';
@@ -16,7 +16,7 @@ import SubroomGeolocation from './Components/SubroomGeolocation';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-
+  
   LogBox.ignoreLogs([
     'Non-serializable values were found in the navigation state',
   ]);
@@ -34,6 +34,7 @@ export default function App() {
     <View style={{width: "100%", minHeight: Dimensions.get("window").height, backgroundColor: "#000", flex: 1, justifyContent: "center"}}>
       <Animated.View style={{opacity: fadeAnim}}>
         <Image source={require("./assets/logo.png")} resizeMode="contain" style={{width: "100%"}}/>
+        <Text style={{color: "#fff", fontSize: 40, textAlign: "center", fontWeight: "bold"}}>Rooms Management</Text>
       </Animated.View>
     </View>
   );

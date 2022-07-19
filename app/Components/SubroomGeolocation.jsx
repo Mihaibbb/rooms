@@ -45,8 +45,8 @@ export default function Home({ route, navigation }) {
             
             let newLocation = await Location.getCurrentPositionAsync({});
             setLocation(newLocation);
-            setLongitude(newLocation.coords.longitude.toFixed(4));
-            setLatitude(newLocation.coords.latitude.toFixed(4));
+            setLongitude(newLocation.coords.longitude.toFixed(5));
+            setLatitude(newLocation.coords.latitude.toFixed(5));
 
             await watchPosition();
            
@@ -72,11 +72,11 @@ export default function Home({ route, navigation }) {
         await Location.watchPositionAsync({ 
             accuracy: Location.Accuracy.Highest,
             distanceInterval: 0.0001,
-            deferredUpdatesInterval: 50,
+            deferredUpdatesInterval: 1,
             
         }, loc => {  
-            setLongitude(loc.coords.longitude.toFixed(4));
-            setLatitude(loc.coords.latitude.toFixed(4));
+            setLongitude(loc.coords.longitude.toFixed(5));
+            setLatitude(loc.coords.latitude.toFixed(5));
         });
         
     };
@@ -103,7 +103,9 @@ export default function Home({ route, navigation }) {
             newMaxLat = Math.max(newMaxLat, corner.latitude);
             newMinLong = Math.min(newMinLong, corner.longitude);
             newMaxLong = Math.max(newMaxLong, corner.longitude);
-        });
+        })
+
+        console.log("hia hia", newMinLat, newMaxLat, newMinLong, newMaxLong);
         
         setMinLat(newMinLat);
         setMaxLat(newMaxLat);
@@ -112,11 +114,6 @@ export default function Home({ route, navigation }) {
         
 
         const geolocationData = `${newMinLat} ${newMaxLat} ${newMinLong} ${newMaxLong}`;
-        if (!checkInRoom(geolocationData.split(" "))) {
-            setCorners([]);
-            setError(true);
-            return;
-        }
         
         setStart(true);
         console.warn("This is the email: ", email);

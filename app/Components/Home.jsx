@@ -65,7 +65,6 @@ export default function Home({ route, navigation }) {
     };
 
     useEffect(async () => {
-       
         const url = await Linking.getInitialURL();
         let newUrl = "", startIdx, endIdx;
         
@@ -240,11 +239,10 @@ export default function Home({ route, navigation }) {
                                             <Pressable 
                                                 style={[styles.room, {zIndex: isFade === roomIdx ? 1 : 0}]} key={roomIdx} 
                                                 onPress={() => {
-                                                    setDisappearFade(true);
+                                                    if (!room.admin) return;
                                                     room.admin && navigation.navigate("Users", {id, socket, roomId: room.roomId, roomName: room.roomName, email, username: username});
                                                 }}
-                                                onLongPress={() => setIsFade(roomIdx)}
-                                                onPressOut={() => setIsFade(-1)}
+                                          
                                             >
                                                 <Text style={styles.roomTitle}>
                                                     {room.roomName}
@@ -277,11 +275,7 @@ export default function Home({ route, navigation }) {
                                                     />
                                                 </TouchableOpacity>
 
-                                                <View style={styles.roomMenu}>
-                                                    <Text>Delete room</Text>
-                                                    <Text>Info</Text>
-                                                    <Text>Something else...</Text>
-                                                </View>
+                                              
 
                                             </Pressable>
 
